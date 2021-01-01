@@ -56,6 +56,33 @@
         }
       },
       {
+        "package": "liquid",
+        "repositoryURL": "https://github.com/binarybirds/liquid.git",
+        "state": {
+          "branch": null,
+          "revision": "daf9dee3a5aa7e056603a454c183999a3c0fde92",
+          "version": "1.1.0"
+        }
+      },
+      {
+        "package": "liquid-kit",
+        "repositoryURL": "https://github.com/binarybirds/liquid-kit.git",
+        "state": {
+          "branch": null,
+          "revision": "7784afbeed9a86f672f99453dd0c80941000c323",
+          "version": "1.1.1"
+        }
+      },
+      {
+        "package": "liquid-local-driver",
+        "repositoryURL": "https://github.com/binarybirds/liquid-local-driver.git",
+        "state": {
+          "branch": null,
+          "revision": "92f64afaab979e2c11543164fc661c66982a7f2a",
+          "version": "1.1.0"
+        }
+      },
+      {
         "package": "routing-kit",
         "repositoryURL": "https://github.com/vapor/routing-kit.git",
         "state": {

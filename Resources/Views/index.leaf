@@ -1,12 +1,35 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>File upload</title>
+  </head>
+  <body>
+      <h1>File upload</h1>
+      <input type="file" id="file" name="file" accept="image/*" /><br><br>
+      <img id="preview" src="https://theswiftdev.com/images/logos/logo.png" width="256px">
+      <script>
+        document.getElementById('file').addEventListener("change", uploadImage);
 
-  <title>#(title)</title>
-</head>
+        function uploadImage() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/upload?key=test.jpg", true);
+            xhr.onreadystatechange = function() {
+                if(xhr.readyState == 4 && xhr.status == 200) {
+                    document.getElementById('preview').src = this.responseText;
+                }
+            };
 
-<body>
-  <h1>#(title)</h1>
-</body>
+            var file = document.getElementById('file').files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function() {
+                    xhr.send(reader.result);
+                }
+                reader.readAsArrayBuffer(file);
+            }
+        }
+      </script>
+  </body>
 </html>

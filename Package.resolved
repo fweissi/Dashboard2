@@ -56,12 +56,39 @@
         }
       },
       {
+        "package": "leaf",
+        "repositoryURL": "https://github.com/vapor/leaf.git",
+        "state": {
+          "branch": null,
+          "revision": "2f02ba91307a03ef919d7c8dd781862f6f633c2a",
+          "version": "4.0.1"
+        }
+      },
+      {
+        "package": "leaf-kit",
+        "repositoryURL": "https://github.com/vapor/leaf-kit.git",
+        "state": {
+          "branch": null,
+          "revision": "0f0866e0709c685262dc4b6e726f2d424e37b12c",
+          "version": "1.0.0"
+        }
+      },
+      {
         "package": "liquid",
         "repositoryURL": "https://github.com/binarybirds/liquid.git",
         "state": {
           "branch": null,
           "revision": "daf9dee3a5aa7e056603a454c183999a3c0fde92",
           "version": "1.1.0"
+        }
+      },
+      {
+        "package": "liquid-aws-s3-driver",
+        "repositoryURL": "https://github.com/binarybirds/liquid-aws-s3-driver.git",
+        "state": {
+          "branch": null,
+          "revision": "b9f304c3ee3fd8e1e8ee57d005158c02c7bba333",
+          "version": "1.0.5"
         }
       },
       {
@@ -89,6 +116,24 @@
           "branch": null,
           "revision": "4cf052b78aebaf1b23f2264ce04d57b4b6eb5254",
           "version": "4.2.0"
+        }
+      },
+      {
+        "package": "soto",
+        "repositoryURL": "https://github.com/soto-project/soto.git",
+        "state": {
+          "branch": null,
+          "revision": "512845f7383a171597cf79ffa614b63bad4adda4",
+          "version": "5.0.0"
+        }
+      },
+      {
+        "package": "soto-core",
+        "repositoryURL": "https://github.com/soto-project/soto-core.git",
+        "state": {
+          "branch": null,
+          "revision": "b24d8687c85b1c678d02077f430ec36b7bcf066a",
+          "version": "5.0.0"
         }
       },
       {

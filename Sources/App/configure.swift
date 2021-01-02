@@ -17,10 +17,6 @@ public func configure(_ app: Application) throws {
     
     app.views.use(.leaf)
 
-    app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
-
-    app.migrations.add(CreateTodo())
-
     // register routes
     try routes(app)
 }

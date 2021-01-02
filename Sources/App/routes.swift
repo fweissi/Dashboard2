@@ -1,4 +1,3 @@
-import Fluent
 import Leaf
 import Vapor
 
@@ -36,6 +35,4 @@ func routes(_ app: Application) throws {
             .flatMap { req.fs.upload(key: key, data: Data(buffer: $0)) }
         // returns the full public url of the uploaded image
     }
-
-    try app.register(collection: TodoController())
 }

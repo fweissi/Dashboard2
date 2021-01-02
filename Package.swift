@@ -19,8 +19,6 @@ let package = Package(
             dependencies: [
                 .product(name: "Liquid", package: "liquid"),
                 .product(name: "LiquidAwsS3Driver", package: "liquid-aws-s3-driver"),
-                .product(name: "Fluent", package: "fluent"),
-                .product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
             ],

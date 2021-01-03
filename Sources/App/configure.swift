@@ -17,12 +17,28 @@ public func configure(_ app: Application) throws {
     
     app.views.use(.leaf)
     
-    app.databases.use(try .postgres(
-        url: Environment.Postgres.databaseURL
-    ), as: .psql)
+//    let postgresDatabase = DatabaseConfigurationFactory.postgres(
+//        hostname: Environment.Postgres.hostname,
+//        port: Environment.Postgres.port,
+//        username: Environment.Postgres.username,
+//        password: Environment.Postgres.password,
+//        database: Environment.Postgres.database)
     
-    app.migrations.add(CreateTodo())
-    try app.autoMigrate().wait()
+    if let postgresDatabase = try? DatabaseConfigurationFactory.postgres(url: Environment.Postgres.databaseURL) {
+        
+        app.databases.use(postgresDatabase, as: .psql)
+        
+        app.migrations.add(CreateTodo())
+        do {
+            try app.autoMigrate().wait()
+        }
+        catch {
+            app.logger.critical("Failed to open a database.")
+        }
+    }
+    else {
+        app.logger.critical("Failed to open a database.")
+    }
     
     // register routes
     try routes(app)

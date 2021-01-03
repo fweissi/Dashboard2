@@ -1,3 +1,5 @@
+import Fluent
+import FluentSQLiteDriver
 import Leaf
 import Liquid
 import LiquidAwsS3Driver
@@ -14,6 +16,10 @@ public func configure(_ app: Application) throws {
     app.fileStorages.use(.awsS3(region: .uswest1, bucket: "playdashboard"), as: .awsS3)
     
     app.views.use(.leaf)
+
+    app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
+
+    app.migrations.add(CreateTodo())
 
     // register routes
     try routes(app)

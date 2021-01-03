@@ -1,5 +1,5 @@
 import Fluent
-import FluentSQLiteDriver
+import FluentPostgresDriver
 import Leaf
 import Liquid
 import LiquidAwsS3Driver
@@ -16,11 +16,14 @@ public func configure(_ app: Application) throws {
     app.fileStorages.use(.awsS3(region: .uswest1, bucket: "playdashboard"), as: .awsS3)
     
     app.views.use(.leaf)
-
-    app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
-
+    
+    app.databases.use(try .postgres(
+        url: Environment.Postgres.databaseURL
+    ), as: .psql)
+    
     app.migrations.add(CreateTodo())
-
+    try app.autoMigrate().wait()
+    
     // register routes
     try routes(app)
 }

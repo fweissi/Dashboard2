@@ -8,6 +8,7 @@ extension Environment {
     //...
     struct Postgres {
         /// postgres://myuser:mypass@localhost:5432/mydb
+        static let isProduction: Bool = Bool(Environment.get("IS_PRODUCTION") ?? "false") ?? false
         static let databaseURL: String = Environment.get("DATABASE_URL") ?? ""
         static let hostname: String = Environment.get("HOST") ?? ""
         static let port: Int = Int(Environment.get("PORT") ?? "5432") ?? 5432

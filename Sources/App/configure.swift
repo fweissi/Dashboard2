@@ -17,26 +17,25 @@ public func configure(_ app: Application) throws {
     
     app.views.use(.leaf)
     
-//    let postgresDatabase = DatabaseConfigurationFactory.postgres(
-//        hostname: Environment.Postgres.hostname,
-//        port: Environment.Postgres.port,
-//        username: Environment.Postgres.username,
-//        password: Environment.Postgres.password,
-//        database: Environment.Postgres.database)
-    
-    if let postgresDatabase = try? DatabaseConfigurationFactory.postgres(url: Environment.Postgres.databaseURL) {
+    if let databaseURL = Environment.get("DATABASE_URL"),
+       var postgresConfig = PostgresConfiguration(url: databaseURL) {
+        if Environment.Postgres.isProduction {
+            postgresConfig.tlsConfiguration = .forClient(certificateVerification: .none)
+        }
         
-        app.databases.use(postgresDatabase, as: .psql)
+        app.databases.use(.postgres(
+            configuration: postgresConfig
+        ), as: .psql)
         
         app.migrations.add(CreateTodo())
         do {
             try app.autoMigrate().wait()
         }
         catch {
-            app.logger.critical("Failed to open a database.")
+            app.logger.warning("Failed to Auto-Migrate: \(error)")
         }
-    }
-    else {
+        
+    } else {
         app.logger.critical("Failed to open a database.")
     }
     

@@ -23,6 +23,8 @@ func routes(_ app: Application) throws {
         // returns the full public url of the uploaded image
     }
 
+    try app.register(collection: ActionController())
+    try app.register(collection: CardController())
     try app.register(collection: TodoController())
 }
 

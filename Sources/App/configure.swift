@@ -27,6 +27,8 @@ public func configure(_ app: Application) throws {
             configuration: postgresConfig
         ), as: .psql)
         
+        app.migrations.add(CreateCard())
+        app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
         do {
             try app.autoMigrate().wait()

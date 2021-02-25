@@ -8,14 +8,21 @@
 import Vapor
 
 struct UserController: RouteCollection {
-  func boot(routes: RoutesBuilder) throws {
-    let usersRoute = routes.grouped("api", "users")
-    usersRoute.post(use: createHandler)
-  }
-
-  func createHandler(_ req: Request)
+    func boot(routes: RoutesBuilder) throws {
+        let usersRoute = routes.grouped("api", "users")
+        usersRoute.get(use: listHandler)
+        usersRoute.post(use: createHandler)
+    }
+    
+    func listHandler(_ req: Request)
+    throws -> EventLoopFuture<[User]> {
+        User.query(on: req.db).all()
+    }
+    
+    
+    func createHandler(_ req: Request)
     throws -> EventLoopFuture<User> {
-    let user = try req.content.decode(User.self)
-    return user.save(on: req.db).map { user }
-  }
+        let user = try req.content.decode(User.self)
+        return user.save(on: req.db).map { user }
+    }
 }

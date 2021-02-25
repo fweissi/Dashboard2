@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/swift-server/async-http-client.git",
         "state": {
           "branch": null,
-          "revision": "0a8dddbe15cd72f7bb5e47951fb7c1eb0836dfc2",
-          "version": "1.2.2"
+          "revision": "a72c5adce3986ff6b5092ae0464a8f2675087860",
+          "version": "1.2.3"
         }
       },
       {
@@ -84,11 +84,11 @@
       },
       {
         "package": "liquid-aws-s3-driver",
-        "repositoryURL": "https://github.com/binarybirds/liquid-aws-s3-driver.git",
+        "repositoryURL": "https://github.com/fweissi/liquid-aws-s3-driver.git",
         "state": {
           "branch": null,
-          "revision": "b9f304c3ee3fd8e1e8ee57d005158c02c7bba333",
-          "version": "1.0.5"
+          "revision": "e808ad06cf8a9c4b8a7220f22b64476afc86bedc",
+          "version": "1.1.0-beta.6"
         }
       },
       {
@@ -96,8 +96,8 @@
         "repositoryURL": "https://github.com/binarybirds/liquid-kit.git",
         "state": {
           "branch": null,
-          "revision": "7784afbeed9a86f672f99453dd0c80941000c323",
-          "version": "1.1.1"
+          "revision": "c32f534f2e401f6ee422abbd0d1b9c0ec4422500",
+          "version": "1.2.0-beta.6"
         }
       },
       {
@@ -132,8 +132,8 @@
         "repositoryURL": "https://github.com/soto-project/soto.git",
         "state": {
           "branch": null,
-          "revision": "512845f7383a171597cf79ffa614b63bad4adda4",
-          "version": "5.0.0"
+          "revision": "a0d7bdd4c39d31ed505cd60acd2cd6a9a7f19331",
+          "version": "5.1.0"
         }
       },
       {
@@ -141,8 +141,8 @@
         "repositoryURL": "https://github.com/soto-project/soto-core.git",
         "state": {
           "branch": null,
-          "revision": "b24d8687c85b1c678d02077f430ec36b7bcf066a",
-          "version": "5.0.0"
+          "revision": "6f96ce95599ca5d5ab8e8eb76af75aff7db75557",
+          "version": "5.1.0"
         }
       },
       {
@@ -240,8 +240,8 @@
         "repositoryURL": "https://github.com/vapor/vapor.git",
         "state": {
           "branch": null,
-          "revision": "5148f02e42149f73f6616452062cf96b64afbda6",
-          "version": "4.36.2"
+          "revision": "53d15b27ad59b4c91f6ea5fa401b891bd998e202",
+          "version": "4.37.1"
         }
       },
       {

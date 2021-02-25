@@ -25,6 +25,8 @@ func routes(_ app: Application) throws {
 
     try app.register(collection: ActionController())
     try app.register(collection: CardController())
+    try app.register(collection: CardImageController())
     try app.register(collection: TodoController())
+    try app.register(collection: UserController())
 }
 

@@ -13,7 +13,10 @@ public func configure(_ app: Application) throws {
     app.routes.defaultMaxBodySize = "10mb"
     
     // using the local driver
-    app.fileStorages.use(.awsS3(region: .uswest1, bucket: "playdashboard"), as: .awsS3)
+    if let awsS3BucketName = Environment.get("S3_BUCKET_NAME") {
+        let s3Bucket = S3.Bucket(stringLiteral: awsS3BucketName)
+        app.fileStorages.use(.awsS3(region: .uswest1, bucket: s3Bucket), as: .awsS3)
+    }
     
     app.views.use(.leaf)
     
@@ -30,6 +33,8 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
+//        app.migrations.add(CreateCardImage())
+//        app.migrations.add(CreateUser())
         do {
             try app.autoMigrate().wait()
         }

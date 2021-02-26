@@ -10,11 +10,13 @@ struct CardController: RouteCollection {
             card.delete(use: delete)
         }
     }
-
+    
+    
     func index(req: Request) throws -> EventLoopFuture<[Card]> {
         return Card.query(on: req.db).all()
     }
-
+    
+    
     func create(req: Request) throws -> EventLoopFuture<Card> {
         let card = try req.content.decode(Card.self)
         if card.start == nil {
@@ -25,7 +27,8 @@ struct CardController: RouteCollection {
         }
         return card.save(on: req.db).map { card }
     }
-
+    
+    
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         return Card.find(req.parameters.get("cardID"), on: req.db)
             .unwrap(or: Abort(.notFound))

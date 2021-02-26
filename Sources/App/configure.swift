@@ -30,6 +30,8 @@ public func configure(_ app: Application) throws {
             configuration: postgresConfig
         ), as: .psql)
         
+        app.databases.middleware.use(UserMiddleware(), on: .psql)
+        
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())

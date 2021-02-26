@@ -7,7 +7,7 @@ struct CreateTodo: Migration {
             .field("title", .string, .required)
             .create()
     }
-
+    
     func revert(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("todos").delete()
     }

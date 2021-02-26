@@ -6,23 +6,43 @@
 //
 
 import Vapor
+import Fluent
 
 struct UserController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
-        let usersRoute = routes.grouped("api", "users")
-        usersRoute.get(use: listHandler)
-        usersRoute.post(use: createHandler)
+        let users = routes.grouped("api", "users")
+        users.get(use: getAllHandler)
+        users.post(use: createHandler)
+        
+        users.group(":userID") { user in
+            user.get(use: getHandler)
+        }
     }
     
-    func listHandler(_ req: Request)
+    
+    func getAllHandler(_ req: Request)
     throws -> EventLoopFuture<[User]> {
         User.query(on: req.db).all()
     }
     
     
-    func createHandler(_ req: Request)
+    func getHandler(_ req: Request)
     throws -> EventLoopFuture<User> {
+        User.find(req.parameters.get("userID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+    }
+    
+    
+    func createHandler(_ req: Request) throws -> EventLoopFuture<User> {
         let user = try req.content.decode(User.self)
-        return user.save(on: req.db).map { user }
+        return User.query(on: req.db).filter(\.$username == user.username.lowercased()).first()
+            .flatMap { existingUser in
+                if let _ = existingUser {
+                    return req.eventLoop.future(error: Abort(.badRequest, reason: "Username is already in use."))
+                }
+                else {
+                    return user.save(on: req.db).map { user }
+                }
+            }
     }
 }

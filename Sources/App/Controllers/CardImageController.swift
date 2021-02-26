@@ -10,29 +10,66 @@ import Vapor
 
 struct CardImageController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
-        let todos = routes.grouped("images")
-        todos.get(use: index)
-        todos.post(use: create)
-        todos.group(":imagesID") { todo in
-            todo.delete(use: delete)
+        let cardImages = routes.grouped("api", "images")
+        cardImages.get(use: index)
+        cardImages.post(use: create)
+        cardImages.group(":imagesID") { cardImage in
+            cardImage.get("user", use: getUserHandler)
+            cardImage.patch(use: updateHandler)
+            cardImage.delete(use: delete)
         }
     }
-
-    func index(req: Request) throws -> EventLoopFuture<[Todo]> {
-        return Todo.query(on: req.db).all()
+    
+    
+    func index(req: Request) throws -> EventLoopFuture<[CardImage]> {
+        return CardImage.query(on: req.db).all()
     }
-
-    func create(req: Request) throws -> EventLoopFuture<Todo> {
-        let todo = try req.content.decode(Todo.self)
-        return todo.save(on: req.db).map { todo }
+    
+    
+    func create(req: Request) throws -> EventLoopFuture<CardImage> {
+        let data = try req.content.decode(CreateCardImageData.self)
+        let cardImage = CardImage(title: data.title, userID: data.userID)
+        return cardImage.save(on: req.db).map { cardImage }
     }
-
+    
+    
+    func updateHandler(_ req: Request) throws -> EventLoopFuture<CardImage> {
+        let updateData =
+            try req.content.decode(CreateCardImageData.self)
+        return CardImage
+            .find(req.parameters.get("imagesID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { cardImage in
+                cardImage.title = updateData.title
+                cardImage.$user.id = updateData.userID
+                return cardImage.save(on: req.db).map {
+                    cardImage
+                }
+            }
+    }
+    
+    
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return Todo.find(req.parameters.get("imagesID"), on: req.db)
+        return CardImage.find(req.parameters.get("imagesID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { $0.delete(on: req.db) }
             .transform(to: .ok)
     }
+    
+    
+    func getUserHandler(_ req: Request) throws -> EventLoopFuture<User> {
+        CardImage.find(req.parameters.get("imagesID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { acronym in
+                acronym.$user.get(on: req.db)
+            }
+    }
+}
+
+
+struct CreateCardImageData: Content {
+    let title: String
+    let userID: UUID
 }
 
 

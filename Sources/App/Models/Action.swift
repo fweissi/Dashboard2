@@ -36,7 +36,7 @@ final class Action: Model, Content {
     
     @Parent(key: "card_id")
     var card: Card
-
+    
     @Enum(key: "type")
     var type: ActionType
     
@@ -66,9 +66,9 @@ final class Action: Model, Content {
     
     @OptionalField(key: "end")
     var end: Date?
-
+    
     init() { }
-
+    
     init(
         id: UUID? = nil,
         type: ActionType = .linkToWebsite,

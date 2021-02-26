@@ -10,16 +10,19 @@ struct ActionController: RouteCollection {
             action.delete(use: delete)
         }
     }
-
+    
+    
     func index(req: Request) throws -> EventLoopFuture<[Action]> {
         return Action.query(on: req.db).all()
     }
-
+    
+    
     func create(req: Request) throws -> EventLoopFuture<Action> {
         let action = try req.content.decode(Action.self)
         return action.save(on: req.db).map { action }
     }
-
+    
+    
     func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         return Action.find(req.parameters.get("actionID"), on: req.db)
             .unwrap(or: Abort(.notFound))

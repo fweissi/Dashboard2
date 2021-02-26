@@ -17,7 +17,7 @@ struct CreateAction: Migration {
             .field("end", .datetime)
             .create()
     }
-
+    
     func revert(on database: Database) -> EventLoopFuture<Void> {
         return database.schema("actions").delete()
     }

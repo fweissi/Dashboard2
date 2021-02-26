@@ -35,8 +35,9 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
-        app.migrations.add(CreateCardImage())
         app.migrations.add(CreateUser())
+        app.migrations.add(CreateCardImage())
+
         do {
             try app.autoMigrate().wait()
         }

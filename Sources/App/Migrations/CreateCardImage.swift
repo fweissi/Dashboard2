@@ -12,7 +12,7 @@ struct CreateCardImage: Migration {
         return database.schema("card_images")
             .id()
             .field("title", .string, .required)
-            .field("userID", .uuid, .required)
+            .field("userID", .uuid, .required, .references("users", "id"))
             .create()
     }
     

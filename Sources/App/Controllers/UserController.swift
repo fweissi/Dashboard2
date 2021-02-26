@@ -16,20 +16,28 @@ struct UserController: RouteCollection {
         
         users.group(":userID") { user in
             user.get(use: getHandler)
+            user.get("images", use: getCardsHandler)
         }
     }
     
     
-    func getAllHandler(_ req: Request)
-    throws -> EventLoopFuture<[User]> {
+    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[User]> {
         User.query(on: req.db).all()
     }
     
     
-    func getHandler(_ req: Request)
-    throws -> EventLoopFuture<User> {
+    func getHandler(_ req: Request) throws -> EventLoopFuture<User> {
         User.find(req.parameters.get("userID"), on: req.db)
             .unwrap(or: Abort(.notFound))
+    }
+    
+    
+    func getCardsHandler(_ req: Request) throws -> EventLoopFuture<[CardImage]> {
+        User.find(req.parameters.get("userID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { user in
+                user.$cardImages.get(on: req.db)
+            }
     }
     
     

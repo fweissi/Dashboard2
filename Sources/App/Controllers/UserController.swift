@@ -5,8 +5,8 @@
 //  Created by Keith Weiss on 2/25/21.
 //
 
-import Vapor
 import Fluent
+import Vapor
 
 struct UserController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
@@ -16,8 +16,25 @@ struct UserController: RouteCollection {
         
         users.group(":userID") { user in
             user.get(use: getHandler)
-            user.get("images", use: getCardsHandler)
+            user.post("teams", ":teamID", use: addTeamsHandler)
+            user.get("teams", use: getTeamsHandler)
+            user.get("images", use: getImagesHandler)
         }
+    }
+    
+    
+    func addTeamsHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let userQuery = User.find(req.parameters.get("userID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        return userQuery.and(teamQuery)
+            .flatMap { user, team in
+                user
+                    .$teams
+                    .attach(team, on: req.db)
+                    .transform(to: .created)
+            }
     }
     
     
@@ -32,7 +49,15 @@ struct UserController: RouteCollection {
     }
     
     
-    func getCardsHandler(_ req: Request) throws -> EventLoopFuture<[CardImage]> {
+    func getTeamsHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
+        User.find(req.parameters.get("userID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { user in
+                user.$teams.get(on: req.db)
+            }
+    }
+    
+    func getImagesHandler(_ req: Request) throws -> EventLoopFuture<[CardImage]> {
         User.find(req.parameters.get("userID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { user in

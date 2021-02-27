@@ -9,15 +9,15 @@ import Fluent
 
 struct CreateCardImage: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("card_images")
+        database.schema(CardImage.schema)
             .id()
             .field("title", .string, .required)
-            .field("userID", .uuid, .required, .references("users", "id"))
+            .field("userID", .uuid, .required, .references(User.schema, "id"))
             .create()
     }
     
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("card_images").delete()
+        database.schema(CardImage.schema).delete()
     }
 }
 

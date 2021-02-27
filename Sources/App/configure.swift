@@ -20,8 +20,7 @@ public func configure(_ app: Application) throws {
     
     app.views.use(.leaf)
     
-    if let databaseURL = Environment.get("DATABASE_URL"),
-       var postgresConfig = PostgresConfiguration(url: databaseURL) {
+    if var postgresConfig = PostgresConfiguration(url: Environment.Postgres.databaseURL) {
         if Environment.Postgres.isProduction {
             postgresConfig.tlsConfiguration = .forClient(certificateVerification: .none)
         }
@@ -32,11 +31,13 @@ public func configure(_ app: Application) throws {
         
         app.databases.middleware.use(UserMiddleware(), on: .psql)
         
+        app.migrations.add(CreateTeam())
+        app.migrations.add(CreateUser())
+        app.migrations.add(CreateTeamUserPivot())
+        app.migrations.add(CreateCardImage())
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
-        app.migrations.add(CreateUser())
-        app.migrations.add(CreateCardImage())
 
         do {
             try app.autoMigrate().wait()
@@ -45,7 +46,8 @@ public func configure(_ app: Application) throws {
             app.logger.warning("Failed to Auto-Migrate: \(error)")
         }
         
-    } else {
+    }
+    else {
         app.logger.critical("Failed to open a database.")
     }
     

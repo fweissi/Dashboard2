@@ -23,6 +23,12 @@ final class User: Model, Content {
     @Children(for: \.$user)
     var cardImages: [CardImage]
     
+    @Siblings(
+        through: TeamUserPivot.self,
+        from: \.$user,
+        to: \.$team)
+    var teams: [Team]
+    
     init() {}
     
     init(id: UUID? = nil, name: String, username: String) {

@@ -4,27 +4,28 @@ import Vapor
 struct ActionController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let actions = routes.grouped("actions")
-        actions.get(use: index)
-        actions.post(use: create)
+        actions.get(use: getAllHandler)
+        actions.post(use: createHandler)
+        
         actions.group(":actionID") { action in
-            action.delete(use: delete)
+            action.delete(use: deleteHandler)
         }
     }
     
     
-    func index(req: Request) throws -> EventLoopFuture<[Action]> {
-        return Action.query(on: req.db).all()
+    func getAllHandler(req: Request) throws -> EventLoopFuture<[Action]> {
+        Action.query(on: req.db).all()
     }
     
     
-    func create(req: Request) throws -> EventLoopFuture<Action> {
+    func createHandler(req: Request) throws -> EventLoopFuture<Action> {
         let action = try req.content.decode(Action.self)
         return action.save(on: req.db).map { action }
     }
     
     
-    func delete(req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return Action.find(req.parameters.get("actionID"), on: req.db)
+    func deleteHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        Action.find(req.parameters.get("actionID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { $0.delete(on: req.db) }
             .transform(to: .ok)

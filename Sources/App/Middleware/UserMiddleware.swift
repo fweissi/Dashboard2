@@ -6,6 +6,7 @@
 //
 
 import FluentKit
+import Vapor
 
 //struct UserUniqueMiddleware: Middleware {
 //

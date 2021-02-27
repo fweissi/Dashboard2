@@ -16,9 +16,9 @@ struct UserController: RouteCollection {
         
         users.group(":userID") { user in
             user.get(use: getHandler)
-            user.post("teams", ":teamID", use: addTeamsHandler)
             user.get("teams", use: getTeamsHandler)
             user.get("images", use: getImagesHandler)
+            user.post("team", ":teamID", use: addTeamsHandler)
         }
     }
     

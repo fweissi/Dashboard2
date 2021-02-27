@@ -16,9 +16,9 @@ struct TeamController: RouteCollection {
         teams.post(use: createHandler)
         
         teams.group(":teamID") { team in
-            team.post("user", ":userID", use: addUsersHandler)
             team.get("users", use: getUsersHandler)
             team.get(use: getHandler)
+            team.post("user", ":userID", use: addUsersHandler)
         }
     }
     

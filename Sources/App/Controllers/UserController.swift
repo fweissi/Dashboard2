@@ -12,10 +12,16 @@ import Vapor
 struct UserController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let users = routes.grouped("api", "users")
-        users.get(use: getAllHandler)
         users.post(use: createHandler)
         
-        users.group(":userID") { user in
+        let protected = users.grouped(UserAuthenticator())
+            .grouped(User.guardMiddleware())
+        protected.get(use: getAllHandler)
+        protected.get("me") { req -> String in
+            try req.auth.require(User.self).name
+        }
+        
+        protected.group(":userID") { user in
             user.get(use: getHandler)
             user.get("teams", use: getTeamsHandler)
             user.get("images", use: getImagesHandler)

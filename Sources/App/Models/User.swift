@@ -9,7 +9,7 @@ import Crypto
 import Fluent
 import Vapor
 
-final class User: Model, Content {
+final class User: Model, Content, Authenticatable {
     static let schema = "users"
     
     @ID
@@ -42,11 +42,24 @@ final class User: Model, Content {
     init() {}
     
     init(id: UUID? = nil, name: String, username: String, email: String, password: String) {
+        var encryptedPassword: String = password
+        if username == "admin" && password.isEmpty {
+            do {
+                encryptedPassword = try Bcrypt.hash(Environment.get("ADMIN_PASSWORD")!)
+            }
+            catch {
+                fatalError("Cannot create default admin user.")
+            }
+        }
+        
         self.name = name
         self.username = username
         self.email = email
-        self.password = password
+        self.password = encryptedPassword
     }
+    
+    
+    static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com", password: "")
 }
 
 
@@ -57,4 +70,19 @@ extension User: Validatable {
         validations.add("email", as: String.self, is: .email)
         validations.add("password", as: String.self, is: .count(8...))
     }
+}
+
+
+struct UserAuthenticator: BasicAuthenticator {
+    typealias User = App.User
+
+    func authenticate(
+        basic: BasicAuthorization,
+        for request: Request
+    ) -> EventLoopFuture<Void> {
+        if basic.username == "test" && basic.password == "secret" {
+            request.auth.login(User.adminUser)
+        }
+        return request.eventLoop.makeSucceededFuture(())
+   }
 }

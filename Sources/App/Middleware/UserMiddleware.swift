@@ -7,26 +7,6 @@
 
 import FluentKit
 import Vapor
-
-//struct UserUniqueMiddleware: Middleware {
-//
-//   func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
-//
-//    User.query(on: db)
-//        .filter(\.$username, .equal, model.username.lowercased())
-//        .first()
-//        .flatMap { existingUser in
-//            guard existingUser == nil else { throw Abort(.badRequest, reason: "Username is already in use.") }
-//    guard let user = request.auth.get(User.self), user.role == .admin else {
-//        return request.eventLoop.future(error: Abort(.unauthorized))
-//    }
-//
-//    return next.respond(to: request)
-//    }
-//
-//}
-
-
 struct UserMiddleware: ModelMiddleware {
     func create(model: User, on db: Database, next: AnyModelResponder) -> EventLoopFuture<Void> {
         // The model can be altered here before it is created.
@@ -37,5 +17,24 @@ struct UserMiddleware: ModelMiddleware {
             // here will be executed.
             print ("User \(model.username) was created")
         }
+    }
+    
+    
+    func softDelete(model: User, on db: Database, next: AnyModelResponder) -> EventLoopFuture<Void> {
+        guard model.username != "admin" else {
+            print("DENIED /admin user not soft deleted.")
+            return db.eventLoop.future()
+        }
+        
+        return next.softDelete(model, on: db)
+    }
+    
+    func delete(model: User, force: Bool, on db: Database, next: AnyModelResponder) -> EventLoopFuture<Void> {
+        guard model.username != "admin" else {
+            print("DENIED /admin user not deleted.")
+            return db.eventLoop.future()
+        }
+        
+        return next.delete(model, force: force, on: db)
     }
 }

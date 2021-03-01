@@ -20,6 +20,9 @@ struct UserController: RouteCollection {
             user.get("teams", use: getTeamsHandler)
             user.get("images", use: getImagesHandler)
             user.post("team", ":teamID", use: addTeamsHandler)
+            user.patch("restore", use: restoreHandler)
+            user.delete(use: deleteHandler)
+            user.delete("hard", use: deleteHardHandler)
         }
     }
     
@@ -69,15 +72,42 @@ struct UserController: RouteCollection {
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<User> {
         let user = try req.content.decode(User.self)
+        try User.validate(content: req)
         user.password = try Bcrypt.hash(user.password)
-        return User.query(on: req.db).filter(\.$username == user.username.lowercased()).first()
-            .flatMap { existingUser in
-                if let _ = existingUser {
-                    return req.eventLoop.future(error: Abort(.badRequest, reason: "Username is already in use."))
-                }
-                else {
-                    return user.save(on: req.db).map { user }
-                }
+        return user.save(on: req.db).map { user }
+    }
+    
+    
+    func restoreHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        guard let uuidString = req.parameters.get("userID"),
+              let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
+        return User.query(on: req.db).filter(\.$id == uuid).withDeleted().first().unwrap(or: Abort(.notFound))
+            .flatMap { $0.restore(on: req.db) }
+            .transform(to: .resetContent)
+    }
+    
+    
+    func deleteHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        User.find(req.parameters.get("userID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { user in
+                guard user.username != "admin" else { return req.eventLoop.future(.unauthorized) }
+                
+                return user.delete(on: req.db)
+                    .transform(to: .resetContent)
+            }
+    }
+    
+    
+    func deleteHardHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        guard let uuidString = req.parameters.get("userID"),
+              let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
+        return User.query(on: req.db).filter(\.$id == uuid).withDeleted().first().unwrap(or: Abort(.notFound))
+            .flatMap { user in
+                guard user.username != "admin" else { return req.eventLoop.future(.unauthorized) }
+                
+                return user.delete(on: req.db)
+                    .transform(to: .resetContent)
             }
     }
 }

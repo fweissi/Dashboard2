@@ -27,6 +27,9 @@ final class User: Model, Content {
     @Field(key: "password")
     var password: String
     
+    @Timestamp(key: "deleted_at", on: .delete)
+        var deletedAt: Date?
+    
     @Children(for: \.$user)
     var cardImages: [CardImage]
     
@@ -43,5 +46,15 @@ final class User: Model, Content {
         self.username = username
         self.email = email
         self.password = password
+    }
+}
+
+
+extension User: Validatable {
+    static func validations(_ validations: inout Validations) {
+        validations.add("name", as: String.self, is: !.empty)
+        validations.add("username", as: String.self, is: .count(3...) && .alphanumeric)
+        validations.add("email", as: String.self, is: .email)
+        validations.add("password", as: String.self, is: .count(8...))
     }
 }

@@ -31,8 +31,8 @@ public func configure(_ app: Application) throws {
         
         app.databases.middleware.use(UserMiddleware(), on: .psql)
         
-        app.migrations.add(CreateUser())
         app.migrations.add(CreateTeam())
+        app.migrations.add(CreateUser())
         app.migrations.add(CreateTeamUserPivot())
         app.migrations.add(CreateCardImage())
         app.migrations.add(CreateCard())

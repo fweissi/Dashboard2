@@ -5,6 +5,7 @@
 //  Created by Keith Weiss on 2/25/21.
 //
 
+import Crypto
 import Fluent
 import Vapor
 
@@ -68,6 +69,7 @@ struct UserController: RouteCollection {
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<User> {
         let user = try req.content.decode(User.self)
+        user.password = try Bcrypt.hash(user.password)
         return User.query(on: req.db).filter(\.$username == user.username.lowercased()).first()
             .flatMap { existingUser in
                 if let _ = existingUser {

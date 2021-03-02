@@ -55,11 +55,13 @@ struct TeamController: RouteCollection {
     }
     
     
-    func getUsersHandler(_ req: Request) throws -> EventLoopFuture<[User]> {
+    func getUsersHandler(_ req: Request) throws -> EventLoopFuture<[User.Public]> {
         Team.find(req.parameters.get("teamID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { team in
-                team.$users.get(on: req.db)
+                team.$users.get(on: req.db).flatMap { users in
+                    req.eventLoop.future( users.map { $0.toPublic() })
+                }
             }
     }
     

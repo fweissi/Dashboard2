@@ -12,6 +12,50 @@ import Vapor
 final class User: Model, Content, Authenticatable {
     static let schema = "users"
     
+    struct Public: Content {
+        let id: UUID?
+        let name: String
+        let username: String
+    }
+    
+    
+    struct PasswordAuthenticator: BasicAuthenticator {
+        typealias User = App.User
+        
+        func authenticate(
+            basic: BasicAuthorization,
+            for request: Request
+        ) -> EventLoopFuture<Void> {
+            User.query(on: request.db)
+                .filter(\.$username == basic.username)
+                .first()
+                .flatMap { user in
+                    if let user = user,
+                       let verified = try? Bcrypt.verify(basic.password, created: user.password),
+                       verified {
+                        request.auth.login(user)
+                    }
+                    
+                    return request.eventLoop.makeSucceededFuture(())
+                }
+        }
+    }
+
+
+    struct TokenAuthenticator: BearerAuthenticator {
+        typealias User = App.User
+
+        func authenticate(
+            bearer: BearerAuthorization,
+            for request: Request
+        ) -> EventLoopFuture<Void> {
+           if bearer.token == "foo" {
+               request.auth.login(User.adminUser)
+           }
+           return request.eventLoop.makeSucceededFuture(())
+       }
+    }
+    
     @ID
     var id: UUID?
     
@@ -59,6 +103,11 @@ final class User: Model, Content, Authenticatable {
     }
     
     
+    func toPublic() -> User.Public {
+        Public(id: id, name: name, username: username)
+    }
+    
+    
     static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com", password: "")
 }
 
@@ -70,19 +119,4 @@ extension User: Validatable {
         validations.add("email", as: String.self, is: .email)
         validations.add("password", as: String.self, is: .count(8...))
     }
-}
-
-
-struct UserAuthenticator: BasicAuthenticator {
-    typealias User = App.User
-
-    func authenticate(
-        basic: BasicAuthorization,
-        for request: Request
-    ) -> EventLoopFuture<Void> {
-        if basic.username == "test" && basic.password == "secret" {
-            request.auth.login(User.adminUser)
-        }
-        return request.eventLoop.makeSucceededFuture(())
-   }
 }

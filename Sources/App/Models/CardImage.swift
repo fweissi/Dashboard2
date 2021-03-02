@@ -20,6 +20,10 @@ final class CardImage: Model, Content {
     @Parent(key: "userID")
     var user: User
     
+    var publicUser: User.Public {
+        user.toPublic()
+    }
+    
     init() { }
     
     init(id: UUID? = nil, title: String, userID: User.IDValue) {

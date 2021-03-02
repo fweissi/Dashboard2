@@ -14,21 +14,23 @@ struct UserController: RouteCollection {
         let users = routes.grouped("api", "users")
         users.post(use: createHandler)
         
-        let protected = users.grouped(UserAuthenticator())
+        let protected = users
+            .grouped(User.PasswordAuthenticator())
+            .grouped(User.TokenAuthenticator())
             .grouped(User.guardMiddleware())
         protected.get(use: getAllHandler)
         protected.get("me") { req -> String in
             try req.auth.require(User.self).name
         }
         
-        protected.group(":userID") { user in
-            user.get(use: getHandler)
-            user.get("teams", use: getTeamsHandler)
-            user.get("images", use: getImagesHandler)
-            user.post("team", ":teamID", use: addTeamsHandler)
-            user.patch("restore", use: restoreHandler)
-            user.delete(use: deleteHandler)
-            user.delete("hard", use: deleteHardHandler)
+        protected.group(":userID") { protected in
+            protected.get(use: getHandler)
+            protected.get("teams", use: getTeamsHandler)
+            protected.get("images", use: getImagesHandler)
+            protected.post("team", ":teamID", use: addTeamsHandler)
+            protected.patch("restore", use: restoreHandler)
+            protected.delete(use: deleteHandler)
+            protected.delete("hard", use: deleteHardHandler)
         }
     }
     
@@ -48,8 +50,8 @@ struct UserController: RouteCollection {
     }
     
     
-    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[User]> {
-        User.query(on: req.db).all()
+    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[User.Public]> {
+        User.query(on: req.db).all().mapEach { $0.toPublic() }
     }
     
     
@@ -76,11 +78,11 @@ struct UserController: RouteCollection {
     }
     
     
-    func createHandler(_ req: Request) throws -> EventLoopFuture<User> {
+    func createHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
         let user = try req.content.decode(User.self)
         try User.validate(content: req)
         user.password = try Bcrypt.hash(user.password)
-        return user.save(on: req.db).map { user }
+        return user.save(on: req.db).map { user.toPublic() }
     }
     
     

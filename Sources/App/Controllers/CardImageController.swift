@@ -11,8 +11,7 @@ import Vapor
 struct CardImageController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let protected = routes.grouped("api", "images")
-            .grouped(User.PasswordAuthenticator())
-            .grouped(User.TokenAuthenticator())
+            .grouped(UserToken.authenticator())
             .grouped(User.guardMiddleware())
         protected.get(use: getAllHandler)
         protected.post(use: createHandler)

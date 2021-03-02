@@ -17,7 +17,7 @@ final class CardImage: Model, Content {
     @Field(key: "title")
     var title: String
     
-    @Parent(key: "userID")
+    @Parent(key: "user_id")
     var user: User
     
     var publicUser: User.Public {

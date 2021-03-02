@@ -14,10 +14,10 @@ final class TeamUserPivot: Model {
     @ID
     var id: UUID?
     
-    @Parent(key: "teamID")
+    @Parent(key: "team_id")
     var team: Team
     
-    @Parent(key: "userID")
+    @Parent(key: "user_id")
     var user: User
     
     init() {}

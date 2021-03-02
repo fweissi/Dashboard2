@@ -11,8 +11,8 @@ struct CreateTeamUserPivot: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
         database.schema(TeamUserPivot.schema)
             .id()
-            .field("teamID", .uuid, .required, .references(Team.schema, "id", onDelete: .cascade))
-            .field("userID", .uuid, .required, .references(User.schema, "id", onDelete: .cascade))
+            .field("team_id", .uuid, .required, .references(Team.schema, "id", onDelete: .cascade))
+            .field("user_id", .uuid, .required, .references(User.schema, "id", onDelete: .cascade))
             .create()
     }
     

@@ -14,16 +14,20 @@ struct UserController: RouteCollection {
         let users = routes.grouped("api", "users")
         users.post(use: createHandler)
         
-        let protected = users
-            .grouped(User.PasswordAuthenticator())
-            .grouped(User.TokenAuthenticator())
+        let passwordProtected = users.grouped(User.authenticator())
+        passwordProtected.post("login", use: loginHandler)
+        
+        let tokenProtected = users.grouped(UserToken.authenticator())
             .grouped(User.guardMiddleware())
-        protected.get(use: getAllHandler)
-        protected.get("me") { req -> String in
-            try req.auth.require(User.self).name
+        tokenProtected.get(use: getAllHandler)
+        tokenProtected.get("me") { req -> User.Public in
+            try req.auth.require(User.self).toPublic()
+        }
+        tokenProtected.get("me", "full") { req -> User in
+            try req.auth.require(User.self)
         }
         
-        protected.group(":userID") { protected in
+        tokenProtected.group(":userID") { protected in
             protected.get(use: getHandler)
             protected.get("teams", use: getTeamsHandler)
             protected.get("images", use: getImagesHandler)
@@ -79,19 +83,44 @@ struct UserController: RouteCollection {
     
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
-        let user = try req.content.decode(User.self)
-        try User.validate(content: req)
-        user.password = try Bcrypt.hash(user.password)
-        return user.save(on: req.db).map { user.toPublic() }
+        try User.Create.validate(content: req)
+        let create = try req.content.decode(User.Create.self)
+        guard create.password == create.confirmPassword else {
+            throw Abort(.badRequest, reason: "Passwords did not match")
+        }
+        
+        let user = try User(
+            name: create.name,
+            username: create.username,
+            email: create.email,
+            passwordHash: Bcrypt.hash(create.password)
+        )
+        
+        return user.save(on: req.db)
+            .map { user.toPublic() }
+    }
+    
+    
+    func loginHandler(_ req: Request) throws -> EventLoopFuture<UserToken> {
+        let user = try req.auth.require(User.self)
+        let token = try user.generateToken()
+        return token.save(on: req.db)
+            .map { token }
     }
     
     
     func restoreHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let uuidString = req.parameters.get("userID"),
               let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
-        return User.query(on: req.db).filter(\.$id == uuid).withDeleted().first().unwrap(or: Abort(.notFound))
-            .flatMap { $0.restore(on: req.db) }
-            .transform(to: .resetContent)
+        return User.query(on: req.db)
+            .filter(\.$id == uuid)
+            .withDeleted()
+            .first()
+            .unwrap(or: Abort(.notFound))
+            .flatMap {
+                $0.restore(on: req.db)
+                    .transform(to: .resetContent)
+            }
     }
     
     
@@ -100,6 +129,11 @@ struct UserController: RouteCollection {
             .unwrap(or: Abort(.notFound))
             .flatMap { user in
                 guard user.username != "admin" else { return req.eventLoop.future(.unauthorized) }
+                
+                if let authUser = req.auth.get(User.self),
+                   authUser.id == user.id {
+                    req.auth.logout(User.self)
+                }
                 
                 return user.delete(on: req.db)
                     .transform(to: .resetContent)

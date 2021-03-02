@@ -9,7 +9,7 @@ import Crypto
 import Fluent
 import Vapor
 
-final class User: Model, Content, Authenticatable {
+final class User: Model, Content {
     static let schema = "users"
     
     struct Public: Content {
@@ -18,43 +18,6 @@ final class User: Model, Content, Authenticatable {
         let username: String
     }
     
-    
-    struct PasswordAuthenticator: BasicAuthenticator {
-        typealias User = App.User
-        
-        func authenticate(
-            basic: BasicAuthorization,
-            for request: Request
-        ) -> EventLoopFuture<Void> {
-            User.query(on: request.db)
-                .filter(\.$username == basic.username)
-                .first()
-                .flatMap { user in
-                    if let user = user,
-                       let verified = try? Bcrypt.verify(basic.password, created: user.password),
-                       verified {
-                        request.auth.login(user)
-                    }
-                    
-                    return request.eventLoop.makeSucceededFuture(())
-                }
-        }
-    }
-
-
-    struct TokenAuthenticator: BearerAuthenticator {
-        typealias User = App.User
-
-        func authenticate(
-            bearer: BearerAuthorization,
-            for request: Request
-        ) -> EventLoopFuture<Void> {
-           if bearer.token == "foo" {
-               request.auth.login(User.adminUser)
-           }
-           return request.eventLoop.makeSucceededFuture(())
-       }
-    }
     
     @ID
     var id: UUID?
@@ -68,14 +31,17 @@ final class User: Model, Content, Authenticatable {
     @Field(key: "email")
     var email: String
     
-    @Field(key: "password")
-    var password: String
+    @Field(key: "password_hash")
+    var passwordHash: String
     
     @Timestamp(key: "deleted_at", on: .delete)
         var deletedAt: Date?
     
     @Children(for: \.$user)
     var cardImages: [CardImage]
+    
+    @Children(for: \.$user)
+    var tokens: [UserToken]
     
     @Siblings(
         through: TeamUserPivot.self,
@@ -85,11 +51,11 @@ final class User: Model, Content, Authenticatable {
     
     init() {}
     
-    init(id: UUID? = nil, name: String, username: String, email: String, password: String) {
-        var encryptedPassword: String = password
-        if username == "admin" && password.isEmpty {
+    init(id: UUID? = nil, name: String, username: String, email: String, passwordHash: String = "") {
+        var hashedPassword: String = passwordHash
+        if username == "admin" && passwordHash.isEmpty {
             do {
-                encryptedPassword = try Bcrypt.hash(Environment.get("ADMIN_PASSWORD")!)
+                hashedPassword = try Bcrypt.hash(Environment.get("ADMIN_PASSWORD")!)
             }
             catch {
                 fatalError("Cannot create default admin user.")
@@ -99,7 +65,7 @@ final class User: Model, Content, Authenticatable {
         self.name = name
         self.username = username
         self.email = email
-        self.password = encryptedPassword
+        self.passwordHash = hashedPassword
     }
     
     
@@ -108,15 +74,46 @@ final class User: Model, Content, Authenticatable {
     }
     
     
-    static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com", password: "")
+    static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com")
 }
 
 
-extension User: Validatable {
+extension User {
+    struct Create: Content {
+        var name: String
+        var username: String
+        var email: String
+        var password: String
+        var confirmPassword: String
+    }
+}
+
+
+extension User.Create: Validatable {
     static func validations(_ validations: inout Validations) {
         validations.add("name", as: String.self, is: !.empty)
-        validations.add("username", as: String.self, is: .count(3...) && .alphanumeric)
+        validations.add("username", as: String.self, is: !.empty && .count(3...) && .alphanumeric)
         validations.add("email", as: String.self, is: .email)
         validations.add("password", as: String.self, is: .count(8...))
+    }
+}
+
+
+extension User: ModelAuthenticatable {
+    static let usernameKey = \User.$username    // Can be switched to \User.$email if we want to use email as username
+    static let passwordHashKey = \User.$passwordHash
+
+    func verify(password: String) throws -> Bool {
+        try Bcrypt.verify(password, created: self.passwordHash)
+    }
+}
+
+
+extension User {
+    func generateToken() throws -> UserToken {
+        try .init(
+            value: [UInt8].random(count: 16).base64,
+            userID: self.requireID()
+        )
     }
 }

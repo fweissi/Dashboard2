@@ -20,11 +20,12 @@ struct UserController: RouteCollection {
         let tokenProtected = users.grouped(UserToken.authenticator())
             .grouped(User.guardMiddleware())
         tokenProtected.get(use: getAllHandler)
-        tokenProtected.get("me") { req -> User.Public in
-            try req.auth.require(User.self).toPublic()
-        }
+        tokenProtected.get("logout", use: logoutHandler)
         tokenProtected.get("me", "full") { req -> User in
             try req.auth.require(User.self)
+        }
+        tokenProtected.get("me") { req -> User.Public in
+            try req.auth.require(User.self).toPublic()
         }
         
         tokenProtected.group(":userID") { protected in
@@ -109,6 +110,21 @@ struct UserController: RouteCollection {
     }
     
     
+    func logoutHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.auth.require(User.self)
+        let userID = try user.requireID()
+        req.auth.logout(User.self)
+        
+        return UserToken.query(on: req.db)
+            .filter(\.$user.$id == userID)
+            .all()
+            .flatMap { tokens in
+                return tokens.delete(force: true, on: req.db)
+                    .transform(to: .resetContent)
+            }
+    }
+    
+    
     func restoreHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let uuidString = req.parameters.get("userID"),
               let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
@@ -144,11 +160,15 @@ struct UserController: RouteCollection {
     func deleteHardHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         guard let uuidString = req.parameters.get("userID"),
               let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
-        return User.query(on: req.db).filter(\.$id == uuid).withDeleted().first().unwrap(or: Abort(.notFound))
+        return User.query(on: req.db)
+            .filter(\.$id == uuid)
+            .withDeleted()
+            .first()
+            .unwrap(or: Abort(.notFound))
             .flatMap { user in
                 guard user.username != "admin" else { return req.eventLoop.future(.unauthorized) }
                 
-                return user.delete(on: req.db)
+                return user.delete(force: true, on: req.db)
                     .transform(to: .resetContent)
             }
     }

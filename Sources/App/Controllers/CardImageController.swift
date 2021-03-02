@@ -40,22 +40,13 @@ struct CardImageController: RouteCollection {
     
     
     func createHandler(req: Request) throws -> EventLoopFuture<CardImage> {
-        let data = try req.content.decode(CreateCardImageData.self)
-        let verifiedUser = try req.auth.require(User.self)
-        return User.query(on: req.db)
-            .filter(\.$username == verifiedUser.username)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap { user -> EventLoopFuture<CardImage> in
-                do {
-                    let userID = try user.requireID()
-                    let cardImage = CardImage(title: data.title, userID: userID)
-                    return cardImage.save(on: req.db).map { cardImage }
-                }
-                catch {
-                    fatalError()
-                }
-            }
+        let image = try req.content.decode(CardImage.Create.self)
+        let user = try req.auth.require(User.self)
+        guard let cardImage = try CardImage(title: image.title, user: user)
+        else {
+            throw Abort(.notFound)
+        }
+        return cardImage.save(on: req.db).map { cardImage }
     }
     
     

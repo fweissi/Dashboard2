@@ -26,9 +26,16 @@ final class CardImage: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, title: String, userID: User.IDValue) {
+    init?(id: UUID? = nil, title: String, user: User) throws {
         self.id = id
         self.title = title
-        self.$user.id = userID
+        self.$user.id = try user.requireID()
+    }
+}
+
+
+extension CardImage {
+    struct Create: Content {
+        var title: String
     }
 }

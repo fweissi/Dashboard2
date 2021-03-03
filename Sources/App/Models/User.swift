@@ -78,6 +78,18 @@ final class User: Model, Content {
 }
 
 
+
+//  Extending for ModelAuthenticatable UserToken creation
+extension User {
+    func generateToken() throws -> UserToken {
+        try .init(
+            value: [UInt8].random(count: 16).base64,
+            userID: self.requireID()
+        )
+    }
+}
+
+
 extension User {
     struct Create: Content {
         var name: String
@@ -109,11 +121,4 @@ extension User: ModelAuthenticatable {
 }
 
 
-extension User {
-    func generateToken() throws -> UserToken {
-        try .init(
-            value: [UInt8].random(count: 16).base64,
-            userID: self.requireID()
-        )
-    }
-}
+extension User: ModelSessionAuthenticatable {}

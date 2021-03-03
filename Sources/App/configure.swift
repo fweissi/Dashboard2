@@ -8,6 +8,17 @@ import Vapor
 let imageDirectory: String = "images"
 // configures your application
 public func configure(_ app: Application) throws {
+    app.middleware.use(app.sessions.middleware)
+    app.middleware.use(User.authenticator())
+    
+    // Change the cookie name to "foo".
+    app.sessions.configuration.cookieName = "dashboard2"
+
+    // Configures cookie value creation.
+    app.sessions.configuration.cookieFactory = { sessionID in
+        .init(string: sessionID.string, isSecure: true)
+    }
+    
     // uncomment to serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.routes.defaultMaxBodySize = "10mb"
@@ -17,8 +28,6 @@ public func configure(_ app: Application) throws {
         let s3Bucket = S3.Bucket(stringLiteral: awsS3BucketName)
         app.fileStorages.use(.awsS3(region: .uswest1, bucket: s3Bucket), as: .awsS3)
     }
-    
-    app.views.use(.leaf)
     
     if var postgresConfig = PostgresConfiguration(url: Environment.Postgres.databaseURL) {
         if Environment.Postgres.isProduction {
@@ -39,7 +48,8 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
-
+        app.migrations.add(SessionRecord.migration)
+        
         do {
             try app.autoMigrate().wait()
         }
@@ -51,6 +61,10 @@ public func configure(_ app: Application) throws {
     else {
         app.logger.critical("Failed to open a database.")
     }
+    
+    
+    app.views.use(.leaf)
+    app.sessions.use(.fluent)
     
     // register routes
     try routes(app)

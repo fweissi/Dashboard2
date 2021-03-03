@@ -49,6 +49,7 @@ struct TeamController: RouteCollection {
         Team.query(on: req.db).with(\.$users).all()
     }
     
+    
     func getHandler(_ req: Request) throws -> EventLoopFuture<Team> {
         Team.find(req.parameters.get("teamID"), on: req.db)
             .unwrap(or: Abort(.notFound))

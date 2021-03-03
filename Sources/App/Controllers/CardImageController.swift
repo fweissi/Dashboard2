@@ -15,7 +15,6 @@ struct CardImageController: RouteCollection {
             .grouped(User.guardMiddleware())
         protected.get(use: getAllHandler)
         protected.post(use: createHandler)
-        protected.get(use: getAllHandler)
         
         protected.group(":imageID") { protected in
             protected.get("user", use: getUserHandler)
@@ -51,8 +50,7 @@ struct CardImageController: RouteCollection {
     
     
     func updateHandler(_ req: Request) throws -> EventLoopFuture<CardImage> {
-        let updateData =
-            try req.content.decode(CreateCardImageData.self)
+        let updateData = try req.content.decode(CreateCardImageData.self)
         guard let uuid: UUID = try req.auth.require(User.self).id else { throw Abort(.badRequest) }
         
         return CardImage

@@ -13,8 +13,10 @@ func routes(_ app: Application) throws {
         return req.view.render("login", ["title" : "Login", "error" : "error"])
     }
     app.post("login") { req -> Response in
-        print("---> Session? \(req.hasSession ? "YES" : "no")")
-        guard req.hasSession else { return req.redirect(to: "/login?error") }
+        guard let user = req.auth.get(User.self) else {
+            return req.redirect(to: "/login?error")
+        }
+        req.session.authenticate(user)
         return req.redirect(to: "/")
     }
     app.get("logout") { req -> EventLoopFuture<View> in

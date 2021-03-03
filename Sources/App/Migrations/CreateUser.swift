@@ -6,6 +6,7 @@
 //
 
 import Fluent
+import Vapor
 
 struct CreateUser: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
@@ -23,5 +24,23 @@ struct CreateUser: Migration {
     
     func revert(on database: Database) -> EventLoopFuture<Void> {
         database.schema(User.schema).delete()
+    }
+}
+
+
+struct UserMigrationSeed: Migration {
+    func prepare(on db: Database) -> EventLoopFuture<Void> {
+        [
+            User(
+                name: "Administrator",
+                username: "admin",
+                email: "admin@brandwise.com",
+                passwordHash: try! Bcrypt.hash(Environment.get("ADMIN_PASSWORD")!)
+            )
+        ].create(on: db)
+    }
+
+    func revert(on db: Database) -> EventLoopFuture<Void> {
+        User.query(on: db).delete()
     }
 }

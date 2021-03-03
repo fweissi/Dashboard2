@@ -12,13 +12,6 @@ import Vapor
 final class User: Model, Content {
     static let schema = "users"
     
-    struct Public: Content {
-        let id: UUID?
-        let name: String
-        let username: String
-    }
-    
-    
     @ID
     var id: UUID?
     
@@ -35,7 +28,7 @@ final class User: Model, Content {
     var passwordHash: String
     
     @Timestamp(key: "deleted_at", on: .delete)
-        var deletedAt: Date?
+    var deletedAt: Date?
     
     @Children(for: \.$user)
     var cardImages: [CardImage]
@@ -69,12 +62,21 @@ final class User: Model, Content {
     }
     
     
+    static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com")
+}
+
+
+//  Displaying Users but hiding sensative information
+extension User {
+    struct Public: Model, Content {
+        let id: UUID?
+        let name: String
+        let username: String
+    }
+    
     func toPublic() -> User.Public {
         Public(id: id, name: name, username: username)
     }
-    
-    
-    static var adminUser = User(name: "Administrator", username: "admin", email: "admin@brandwise.com")
 }
 
 
@@ -122,3 +124,32 @@ extension User: ModelAuthenticatable {
 
 
 extension User: ModelSessionAuthenticatable {}
+
+
+struct UserModelCredentialsAuthenticator: CredentialsAuthenticator {
+    
+    struct Input: Content {
+        let username: String
+        let password: String
+    }
+    
+    typealias Credentials = Input
+    
+    func authenticate(credentials: Credentials,
+                      for req: Request) -> EventLoopFuture<Void> {
+        User.query(on: req.db)
+            .filter(\.$username == credentials.username)
+            .first()
+            .map {
+                do {
+                    if let user = $0,
+                       try Bcrypt.verify(credentials.password, created: user.passwordHash) {
+                        req.auth.login(user)
+                    }
+                }
+                catch {
+                    // do nothing...
+                }
+            }
+    }
+}

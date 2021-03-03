@@ -158,8 +158,12 @@ struct UserController: RouteCollection {
     
     
     func deleteHardHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.auth.require(User.self)
+        guard user.username == "admin" else { throw Abort(.unauthorized) }
+        
         guard let uuidString = req.parameters.get("userID"),
               let uuid = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
+        
         return User.query(on: req.db)
             .filter(\.$id == uuid)
             .withDeleted()

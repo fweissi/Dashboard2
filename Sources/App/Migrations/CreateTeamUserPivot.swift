@@ -21,3 +21,26 @@ struct CreateTeamUserPivot: Migration {
         database.schema(TeamUserPivot.schema).delete()
     }
 }
+
+
+struct TeamUserPivotMigrationSeed: Migration {
+    func prepare(on db: Database) -> EventLoopFuture<Void> {
+        let teamQuery = Team.query(on: db).first()
+        let userQuery = User.query(on: db).first()
+        return teamQuery.and(userQuery)
+            .flatMap { team, user in
+                if let team = team,
+                   let user = user {
+                    let _ = team
+                        .$users
+                        .attach(user, on: db)
+                }
+                return db.eventLoop.makeSucceededVoidFuture()
+            }
+    }
+
+    func revert(on db: Database) -> EventLoopFuture<Void> {
+        TeamUserPivot.query(on: db).delete()
+    }
+}
+

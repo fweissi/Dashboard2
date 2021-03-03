@@ -19,3 +19,16 @@ struct CreateTeam: Migration {
         database.schema(Team.schema).delete()
     }
 }
+
+
+struct TeamMigrationSeed: Migration {
+    func prepare(on db: Database) -> EventLoopFuture<Void> {
+        [
+            Team(name: "Brandwise")
+        ].create(on: db)
+    }
+
+    func revert(on db: Database) -> EventLoopFuture<Void> {
+        Team.query(on: db).delete()
+    }
+}

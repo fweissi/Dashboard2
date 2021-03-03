@@ -8,8 +8,9 @@ import Vapor
 let imageDirectory: String = "images"
 // configures your application
 public func configure(_ app: Application) throws {
+    app.sessions.use(.fluent)
     app.middleware.use(app.sessions.middleware)
-    app.middleware.use(User.authenticator())
+    app.middleware.use(UserModelCredentialsAuthenticator())
     
     // Change the cookie name to "foo".
     app.sessions.configuration.cookieName = "dashboard2"
@@ -50,6 +51,10 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateTodo())
         app.migrations.add(SessionRecord.migration)
         
+        app.migrations.add(TeamMigrationSeed())
+        app.migrations.add(UserMigrationSeed())
+        app.migrations.add(TeamUserPivotMigrationSeed())
+        
         do {
             try app.autoMigrate().wait()
         }
@@ -64,7 +69,6 @@ public func configure(_ app: Application) throws {
     
     
     app.views.use(.leaf)
-    app.sessions.use(.fluent)
     
     // register routes
     try routes(app)

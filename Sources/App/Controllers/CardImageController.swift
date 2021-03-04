@@ -15,6 +15,7 @@ struct CardImageController: RouteCollection {
             .grouped(User.guardMiddleware())
         protected.get(use: getAllHandler)
         protected.post(use: createHandler)
+        protected.post("upload", use: uploadHandler)
         
         protected.group(":imageID") { protected in
             protected.get("user", use: getUserHandler)
@@ -60,6 +61,22 @@ struct CardImageController: RouteCollection {
                 cardImage.key = updateData.key
                 cardImage.$user.id = uuid
                 return cardImage.save(on: req.db).map { cardImage }
+            }
+    }
+    
+    
+    func uploadHandler(_ req: Request) throws -> EventLoopFuture<String> {
+        let key = try req.query.get(String.self, at: "key")
+        let user = try req.auth.require(User.self)
+        
+        return req.body.collect()
+            .unwrap(or: Abort(.noContent))
+            .flatMap { data in
+                req.fs.upload(key: key, data: Data(buffer: data)).flatMap { uri in
+                    guard let cardImage = try? CardImage(uri: uri, key: key, user: user)
+                    else { fatalError() }
+                    return cardImage.save(on: req.db).map { uri }
+                }
             }
     }
     

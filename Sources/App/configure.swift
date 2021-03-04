@@ -11,7 +11,7 @@ public func configure(_ app: Application) throws {
     app.sessions.use(.fluent)
     app.middleware.use(app.sessions.middleware)
     app.middleware.use(UserModelCredentialsAuthenticator())
-    
+//    app.middleware.use(User.redirectMiddleware(path: "/login"))
     // Change the cookie name to "foo".
     app.sessions.configuration.cookieName = "dashboard2"
 

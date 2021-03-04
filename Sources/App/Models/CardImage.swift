@@ -14,8 +14,11 @@ final class CardImage: Model, Content {
     @ID(key: .id)
     var id: UUID?
     
-    @Field(key: "title")
-    var title: String
+    @Field(key: "uri")
+    var uri: String
+    
+    @Field(key: "key")
+    var key: String
     
     @Parent(key: "user_id")
     var user: User
@@ -26,9 +29,10 @@ final class CardImage: Model, Content {
     
     init() { }
     
-    init?(id: UUID? = nil, title: String, user: User) throws {
+    init?(id: UUID? = nil, uri: String, key: String, user: User) throws {
         self.id = id
-        self.title = title
+        self.uri = uri
+        self.key = key
         self.$user.id = try user.requireID()
     }
 }
@@ -36,6 +40,6 @@ final class CardImage: Model, Content {
 
 extension CardImage {
     struct Create: Content {
-        var title: String
+        var key: String
     }
 }

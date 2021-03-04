@@ -41,7 +41,7 @@ struct CardImageController: RouteCollection {
     func createHandler(req: Request) throws -> EventLoopFuture<CardImage> {
         let image = try req.content.decode(CardImage.Create.self)
         let user = try req.auth.require(User.self)
-        guard let cardImage = try CardImage(title: image.title, user: user)
+        guard let cardImage = try CardImage(uri: "", key: image.key, user: user)
         else {
             throw Abort(.notFound)
         }
@@ -57,7 +57,7 @@ struct CardImageController: RouteCollection {
             .find(req.parameters.get("imageID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { cardImage in
-                cardImage.title = updateData.title
+                cardImage.key = updateData.key
                 cardImage.$user.id = uuid
                 return cardImage.save(on: req.db).map { cardImage }
             }
@@ -74,7 +74,7 @@ struct CardImageController: RouteCollection {
 
 
 struct CreateCardImageData: Content {
-    let title: String
+    let key: String
 }
 
 

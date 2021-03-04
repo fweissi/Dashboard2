@@ -68,7 +68,7 @@ final class User: Model, Content {
 
 //  Displaying Users but hiding sensative information
 extension User {
-    struct Public: Model, Content {
+    struct Public: Content {
         let id: UUID?
         let name: String
         let username: String

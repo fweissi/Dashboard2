@@ -16,6 +16,13 @@ func routes(_ app: Application) throws {
     }
     
     app.get() { req -> EventLoopFuture<View> in
+        guard req.hasSession
+        else {
+            return req
+                .view
+                .render("login", ["title" : "Login", "error" : "login"])
+        }
+        
         return req.view.render("index")
     }
     

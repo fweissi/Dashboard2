@@ -33,7 +33,7 @@ func routes(_ app: Application) throws {
     }
     
     app.post("upload") { (req) -> EventLoopFuture<String> in
-        let key = try req.query.get(String.self, at: "key")
+        let key = try req.query.get(String.self, at: "key").replacingOccurrences(of: " ", with: "_")
         guard let uuidString = req.session.data["_UserSession"] else { throw Abort(.unauthorized) }
         
         return User.find(UUID(uuidString: uuidString), on: req.db)

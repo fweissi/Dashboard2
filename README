@@ -1,0 +1,1 @@
+This app posts data to an AWS S3 bucket and records info used in a Dashboard app.

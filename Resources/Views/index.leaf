@@ -8,13 +8,15 @@
   <body>
       <h1>File upload</h1>
       <input type="file" id="file" name="file" accept="image/*" /><br><br>
-      <img id="preview" src="https://theswiftdev.com/images/logos/logo.png" width="256px">
+      <img id="preview" src="https://theswiftdev.com/images/logos/logo.png" width="256px"><br><br>
+      <a href="/logout">Log out</a>
       <script>
         document.getElementById('file').addEventListener("change", uploadImage);
 
         function uploadImage() {
+            var fileName = this.files[0].name
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/upload?key=test.jpg", true);
+            xhr.open("POST", "/upload?key=".concat(fileName), true);
             xhr.onreadystatechange = function() {
                 if(xhr.readyState == 4 && xhr.status == 200) {
                     document.getElementById('preview').src = this.responseText;

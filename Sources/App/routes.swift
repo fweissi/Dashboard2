@@ -32,6 +32,11 @@ func routes(_ app: Application) throws {
         return req.redirect(to: "/")
     }
     
+    
+    app.get(".well-known","apple-app-site-association") { req -> EventLoopFuture<View> in
+        req.view.render("apple")
+    }
+    
     app.post("upload") { (req) -> EventLoopFuture<String> in
         let key = try req.query.get(String.self, at: "key").replacingOccurrences(of: " ", with: "_")
         guard let uuidString = req.session.data["_UserSession"] else { throw Abort(.unauthorized) }

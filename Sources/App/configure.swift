@@ -8,6 +8,18 @@ import Vapor
 let imageDirectory: String = "images"
 // configures your application
 public func configure(_ app: Application) throws {
+    app.sessions.use(.fluent)
+    app.middleware.use(app.sessions.middleware)
+    app.middleware.use(UserModelCredentialsAuthenticator())
+//    app.middleware.use(User.redirectMiddleware(path: "/login"))
+    // Change the cookie name to "foo".
+    app.sessions.configuration.cookieName = "dashboard2"
+
+    // Configures cookie value creation.
+    app.sessions.configuration.cookieFactory = { sessionID in
+        .init(string: sessionID.string, isSecure: true)
+    }
+    
     // uncomment to serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.routes.defaultMaxBodySize = "10mb"
@@ -18,10 +30,7 @@ public func configure(_ app: Application) throws {
         app.fileStorages.use(.awsS3(region: .uswest1, bucket: s3Bucket), as: .awsS3)
     }
     
-    app.views.use(.leaf)
-    
-    if let databaseURL = Environment.get("DATABASE_URL"),
-       var postgresConfig = PostgresConfiguration(url: databaseURL) {
+    if var postgresConfig = PostgresConfiguration(url: Environment.Postgres.databaseURL) {
         if Environment.Postgres.isProduction {
             postgresConfig.tlsConfiguration = .forClient(certificateVerification: .none)
         }
@@ -30,11 +39,22 @@ public func configure(_ app: Application) throws {
             configuration: postgresConfig
         ), as: .psql)
         
+        app.databases.middleware.use(UserMiddleware(), on: .psql)
+        
+        app.migrations.add(CreateTeam())
+        app.migrations.add(CreateUser())
+        app.migrations.add(CreateTeamUserPivot())
+        app.migrations.add(CreateUserToken())
+        app.migrations.add(CreateCardImage())
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
-        app.migrations.add(CreateCardImage())
-        app.migrations.add(CreateUser())
+        app.migrations.add(SessionRecord.migration)
+        
+        app.migrations.add(TeamMigrationSeed())
+        app.migrations.add(UserMigrationSeed())
+        app.migrations.add(TeamUserPivotMigrationSeed())
+        
         do {
             try app.autoMigrate().wait()
         }
@@ -42,9 +62,13 @@ public func configure(_ app: Application) throws {
             app.logger.warning("Failed to Auto-Migrate: \(error)")
         }
         
-    } else {
+    }
+    else {
         app.logger.critical("Failed to open a database.")
     }
+    
+    
+    app.views.use(.leaf)
     
     // register routes
     try routes(app)

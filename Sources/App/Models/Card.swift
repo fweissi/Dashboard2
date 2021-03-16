@@ -6,7 +6,7 @@ final class Card: Model, Content {
     
     @ID(key: .id)
     var id: UUID?
-
+    
     @Field(key: "isBanner")
     var isBanner: Bool
     
@@ -30,9 +30,9 @@ final class Card: Model, Content {
     
     @Children(for: \.$card)
     var actions: [Action]
-
+    
     init() { }
-
+    
     init(
         id: UUID? = nil,
         isBanner: Bool = false,

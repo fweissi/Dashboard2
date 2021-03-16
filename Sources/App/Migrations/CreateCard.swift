@@ -2,7 +2,7 @@ import Fluent
 
 struct CreateCard: Migration {
     func prepare(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("cards")
+        database.schema(Card.schema)
             .id()
             .field("isBanner", .bool, .required)
             .field("title", .string, .required)
@@ -13,8 +13,8 @@ struct CreateCard: Migration {
             .field("end", .datetime)
             .create()
     }
-
+    
     func revert(on database: Database) -> EventLoopFuture<Void> {
-        return database.schema("cards").delete()
+        database.schema(Card.schema).delete()
     }
 }

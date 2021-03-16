@@ -1,0 +1,3 @@
+Proof of concept app to allow a user to upload an image to AWS S3 Bucket and store image data into a Postgres instance.
+
+App use Vapor Server Side Swift framework and the Liquid components by Binary Birds.

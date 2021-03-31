@@ -44,20 +44,22 @@ final class CardItem: Model, Content {
     init() {}
     
     init(
-        isInternetRequired: Bool,
-        isPinned: Bool,
-        purchaseRequirement: PurchaseRequirement,
-        category: Category,
-        title: String,
-        callToAction: String,
-        links: [CardAction]
+        id: UUID? = nil,
+        isInternetRequired: Bool = false,
+        isPinned: Bool = false,
+        purchaseRequirement: PurchaseRequirement = .none,
+        category: Category = .information,
+        title: String = "",
+        callToAction: String = "",
+        userID: User.IDValue
     ) {
+        self.id = id
         self.isInternetRequired = isInternetRequired
         self.isPinned = isPinned
         self.purchaseRequirement = purchaseRequirement
         self.category = category
         self.title = title
         self.callToAction = callToAction
-        self.links = links
+        self.$user.id = userID
     }
 }

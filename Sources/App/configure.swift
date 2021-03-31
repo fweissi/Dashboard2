@@ -49,6 +49,8 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateCard())
         app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
+        app.migrations.add(CreateCardItem())
+        app.migrations.add(CreateCardAction())
         app.migrations.add(SessionRecord.migration)
         
         app.migrations.add(TeamMigrationSeed())

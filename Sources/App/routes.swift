@@ -37,6 +37,15 @@ func routes(_ app: Application) throws {
         req.view.render("apple")
     }
     
+    app.post("api", "dashboard") { req -> EventLoopFuture<HTTPStatus> in
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        // decodes Hello struct using custom decoder
+        let dashboard = try req.content.decode(Dashboard.self, using: decoder)
+        return req.eventLoop.future(HTTPStatus.ok)
+    }
+    
     app.post("upload") { (req) -> EventLoopFuture<String> in
         let key = try req.query.get(String.self, at: "key").replacingOccurrences(of: " ", with: "_")
         guard let uuidString = req.session.data["_UserSession"] else { throw Abort(.unauthorized) }
@@ -62,6 +71,7 @@ func routes(_ app: Application) throws {
     try app.register(collection: TeamController())
     try app.register(collection: TodoController())
     try app.register(collection: UserController())
+    try app.register(collection: DashboardController())
 }
 
 

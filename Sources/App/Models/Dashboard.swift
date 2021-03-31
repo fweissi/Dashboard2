@@ -232,6 +232,8 @@ struct Size: Codable, Equatable {
     static func ==(lhs: Size, rhs: Size) -> Bool {
         lhs.width == rhs.width && lhs.height == rhs.height
     }
+    
+    static var zero = Size(width: 0, height: 0)
 }
 
 

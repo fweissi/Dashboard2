@@ -14,17 +14,20 @@ final class CardAction: Model, Content {
     @ID
     var id: UUID?
     
-    @Field(key: "linkType")
+    @Field(key: "type")
     var linkType: LinkType
     
     @Field(key: "baseOrResourceURL")
     var baseOrResourceURL: String
     
-    @Field(key: "safariOption")
+    @Field(key: "safari")
     var safariOption: SafariOption
     
     @Field(key: "size")
     var size: Size
+    
+    @Field(key: "version")
+    var version: Int
     
     @Timestamp(key: "deleted_at", on: .delete)
     var deletedAt: Date?
@@ -37,5 +40,23 @@ final class CardAction: Model, Content {
     
     init() {}
     
-    
+    init(
+        id: UUID? = nil,
+        linkType: LinkType = .asset,
+        baseOrResourceURL: String = "",
+        safariOption: SafariOption = .modal,
+        size: Size = Size.zero,
+        version: Int = 0,
+        userID: User.IDValue,
+        cardItemID: CardItem.IDValue
+    ) {
+        self.id = id
+        self.linkType = linkType
+        self.baseOrResourceURL = baseOrResourceURL
+        self.safariOption = safariOption
+        self.size = size
+        self.version = version
+        self.$user.id = userID
+        self.$cardItem.id = cardItemID
+    }
 }

@@ -18,10 +18,10 @@ class Dashboard: ObservableObject, Codable {
     
     
     func card(for cardImage: CardImage) -> Item? {
-        guard let imageURL = URL(string: cardImage.uri) else { return nil }
+        let imageURI = cardImage.uri
         
         for item in items {
-            if let _ = item.links.first(where: { $0.baseOrResourceURL == imageURL }) {
+            if let _ = item.links.first(where: { $0.baseOrResourceURL == imageURI }) {
                 return item
             }
         }
@@ -30,7 +30,7 @@ class Dashboard: ObservableObject, Codable {
     }
     
     func uses(cardImage: CardImage) -> Bool {
-        guard let imageURL = URL(string: cardImage.uri) else { return false }
+        let imageURL = cardImage.uri
         let links: [ActionLink] = items.extractLinks()
         return links.first(where: { $0.baseOrResourceURL == imageURL }) != nil
     }
@@ -151,7 +151,7 @@ class Item: ObservableObject, Codable {
     }
     
     
-    func baseURL(for linkType: LinkType) -> URL? {
+    func baseURL(for linkType: LinkType) -> String? {
         self.actionLink(for: linkType)?.baseOrResourceURL
     }
 }
@@ -168,7 +168,7 @@ enum LinkType: String, CaseIterable, Codable {
 enum SafariOption: String, CaseIterable, Codable {
     case modal      =   "Modal"
     case safari     =   "Safari"
-    case webView     =   "WebView"
+    case webView    =   "WebView"
 }
 
 enum CustomSize: String, CaseIterable, Codable {
@@ -240,7 +240,7 @@ struct Size: Codable, Equatable {
 class ActionLink: ObservableObject, Codable {
     
     var linkType: LinkType
-    var baseOrResourceURL: URL?
+    var baseOrResourceURL: String?
     var embeddedHTML: String?
     var safariOption: SafariOption?
     var size: Size
@@ -248,7 +248,7 @@ class ActionLink: ObservableObject, Codable {
     
     init(
         linkType: LinkType,
-        baseOrResourceURL: URL?,
+        baseOrResourceURL: String?,
         embeddedHTML: String?,
         safariOption: SafariOption?,
         size: Size,
@@ -257,7 +257,7 @@ class ActionLink: ObservableObject, Codable {
         self.linkType = linkType
         self.baseOrResourceURL = baseOrResourceURL
         self.embeddedHTML = embeddedHTML
-        self.safariOption = safariOption
+        self.safariOption = safariOption ?? SafariOption.modal
         self.size = size
         self.version = version
     }

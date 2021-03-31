@@ -14,11 +14,10 @@ struct CreateCardAction: Migration {
             .id()
             .field("type", .string, .required)
             .field("baseOrResourceURL", .string, .required)
+            .field("embeddedHTML", .string, .required)
             .field("safari", .string, .required)
             .field("size", .dictionary(of: .int), .required)
             .field("version", .int, .required)
-            .field("deleted_at", .datetime)
-            .field("user_id", .uuid, .references(User.schema, "id", onDelete: .cascade))
             .field("card_item_id", .uuid, .references(CardItem.schema, "id", onDelete: .cascade))
             .create()
     }

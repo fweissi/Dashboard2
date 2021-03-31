@@ -17,8 +17,11 @@ final class CardAction: Model, Content {
     @Field(key: "type")
     var linkType: LinkType
     
-    @Field(key: "baseOrResourceURL")
-    var baseOrResourceURL: String
+    @OptionalField(key: "baseOrResourceURL")
+    var baseOrResourceURL: String?
+    
+    @OptionalField(key: "embeddedHTML")
+    var embeddedHTML: String?
     
     @Field(key: "safari")
     var safariOption: SafariOption
@@ -29,12 +32,6 @@ final class CardAction: Model, Content {
     @Field(key: "version")
     var version: Int
     
-    @Timestamp(key: "deleted_at", on: .delete)
-    var deletedAt: Date?
-    
-    @Parent(key: "user_id")
-    var user: User
-    
     @Parent(key: "card_item_id")
     var cardItem: CardItem
     
@@ -42,21 +39,33 @@ final class CardAction: Model, Content {
     
     init(
         id: UUID? = nil,
-        linkType: LinkType = .asset,
-        baseOrResourceURL: String = "",
+        linkType: LinkType,
+        baseOrResourceURL: String?,
+        embeddedHTML: String?,
         safariOption: SafariOption = .modal,
         size: Size = Size.zero,
         version: Int = 0,
-        userID: User.IDValue,
         cardItemID: CardItem.IDValue
     ) {
         self.id = id
         self.linkType = linkType
         self.baseOrResourceURL = baseOrResourceURL
+        self.embeddedHTML = embeddedHTML
         self.safariOption = safariOption
         self.size = size
         self.version = version
-        self.$user.id = userID
+        self.$cardItem.id = cardItemID
+    }
+    
+    
+    init(from actionLink: ActionLink, with cardItemID: CardItem.IDValue) {
+        self.id = nil
+        self.linkType = actionLink.linkType
+        self.baseOrResourceURL = actionLink.baseOrResourceURL
+        self.embeddedHTML = actionLink.embeddedHTML
+        self.safariOption = actionLink.safariOption ?? .modal
+        self.size = actionLink.size
+        self.version = actionLink.version
         self.$cardItem.id = cardItemID
     }
 }

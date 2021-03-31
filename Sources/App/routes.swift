@@ -36,15 +36,7 @@ func routes(_ app: Application) throws {
     app.get(".well-known","apple-app-site-association") { req -> EventLoopFuture<View> in
         req.view.render("apple")
     }
-    
-    app.post("api", "dashboard") { req -> EventLoopFuture<HTTPStatus> in
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
 
-        // decodes Hello struct using custom decoder
-        let dashboard = try req.content.decode(Dashboard.self, using: decoder)
-        return req.eventLoop.future(HTTPStatus.ok)
-    }
     
     app.post("upload") { (req) -> EventLoopFuture<String> in
         let key = try req.query.get(String.self, at: "key").replacingOccurrences(of: " ", with: "_")
@@ -65,8 +57,6 @@ func routes(_ app: Application) throws {
             }
     }
     
-    try app.register(collection: ActionController())
-    try app.register(collection: CardController())
     try app.register(collection: CardImageController())
     try app.register(collection: TeamController())
     try app.register(collection: TodoController())

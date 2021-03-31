@@ -46,8 +46,6 @@ public func configure(_ app: Application) throws {
         app.migrations.add(CreateTeamUserPivot())
         app.migrations.add(CreateUserToken())
         app.migrations.add(CreateCardImage())
-        app.migrations.add(CreateCard())
-        app.migrations.add(CreateAction())
         app.migrations.add(CreateTodo())
         app.migrations.add(CreateCardItem())
         app.migrations.add(CreateCardAction())

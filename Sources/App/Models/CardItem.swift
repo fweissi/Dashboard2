@@ -32,9 +32,6 @@ final class CardItem: Model, Content {
     @Field(key: "callToAction")
     var callToAction: String
     
-    @Timestamp(key: "deleted_at", on: .delete)
-    var deletedAt: Date?
-    
     @Parent(key: "user_id")
     var user: User
     
@@ -60,6 +57,18 @@ final class CardItem: Model, Content {
         self.category = category
         self.title = title
         self.callToAction = callToAction
+        self.$user.id = userID
+    }
+    
+    
+    init(from item: Item, with userID: User.IDValue) {
+        self.id = nil
+        self.isInternetRequired = item.isInternetRequired
+        self.isPinned = item.isPinned
+        self.purchaseRequirement = item.purchaseRequirement
+        self.category = item.category
+        self.title = item.title
+        self.callToAction = item.callToAction
         self.$user.id = userID
     }
 }

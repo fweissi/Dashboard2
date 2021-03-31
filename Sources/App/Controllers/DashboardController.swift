@@ -24,7 +24,7 @@ struct DashboardController: RouteCollection {
     }
     
     
-    func createHandler(req: Request) throws -> EventLoopFuture<[CardItem]> {
+    func createHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
@@ -33,35 +33,14 @@ struct DashboardController: RouteCollection {
         let user = try req.auth.require(User.self)
         let cards = dashboard.items
         
-        let _ = CardItem.query(on: req.db).all().flatMap({ $0.delete(on: req.db)})
-        
-        for card in cards {
-            let cardItem = try CardItem(
-                id: nil,
-                isInternetRequired: card.isInternetRequired,
-                isPinned: card.isPinned,
-                purchaseRequirement: card.purchaseRequirement,
-                category: card.category,
-                title: card.title,
-                callToAction: card.callToAction,
-                userID: user.requireID())
-            
-            let _ = cardItem.save(on: req.db)
-            for link in card.links {
-                let cardAction = CardAction(
-                    id: nil,
-                    linkType: link.linkType,
-                    baseOrResourceURL: link.baseOrResourceURL?.absoluteString ?? "",
-                    safariOption: link.safariOption ?? SafariOption.modal,
-                    size: link.size,
-                    version: link.version,
-                    userID: try user.requireID(),
-                    cardItemID: try cardItem.requireID())
-                
-                let _ = cardAction.save(on: req.db)
+        return req.db.transaction { database -> EventLoopFuture<HTTPStatus> in
+            CardItem.query(on: database).all().flatMap({ $0.delete(force: true, on: database)}).map {
+                    cards.map { (item) -> EventLoopFuture<CardItem> in
+                        guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
+                        return cardItem.create(on: req.db).map({ cardItem })
+                    }
             }
+            .transform(to: HTTPStatus.ok)
         }
-        
-        return CardItem.query(on: req.db).with(\.$links).all()
     }
 }

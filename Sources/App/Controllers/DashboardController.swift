@@ -32,6 +32,9 @@ struct DashboardController: RouteCollection {
         let dashboard = try req.content.decode(Dashboard.self, using: decoder)
         let user = try req.auth.require(User.self)
         let cards = dashboard.items
+        
+        let _ = CardItem.query(on: req.db).all().flatMap({ $0.delete(on: req.db)})
+        
         for card in cards {
             let cardItem = try CardItem(
                 id: nil,
@@ -44,6 +47,19 @@ struct DashboardController: RouteCollection {
                 userID: user.requireID())
             
             let _ = cardItem.save(on: req.db)
+            for link in card.links {
+                let cardAction = CardAction(
+                    id: nil,
+                    linkType: link.linkType,
+                    baseOrResourceURL: link.baseOrResourceURL?.absoluteString ?? "",
+                    safariOption: link.safariOption ?? SafariOption.modal,
+                    size: link.size,
+                    version: link.version,
+                    userID: try user.requireID(),
+                    cardItemID: try cardItem.requireID())
+                
+                let _ = cardAction.save(on: req.db)
+            }
         }
         
         return CardItem.query(on: req.db).with(\.$links).all()

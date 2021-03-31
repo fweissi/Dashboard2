@@ -35,10 +35,20 @@ struct DashboardController: RouteCollection {
         
         return req.db.transaction { database -> EventLoopFuture<HTTPStatus> in
             CardItem.query(on: database).all().flatMap({ $0.delete(force: true, on: database)}).map {
-                    cards.map { (item) -> EventLoopFuture<CardItem> in
-                        guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
-                        return cardItem.create(on: req.db).map({ cardItem })
+                cards.map { (item) -> EventLoopFuture<CardItem> in
+                    guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
+                    return cardItem.create(on: database).map {
+                        let _ = item.links.compactMap { link -> EventLoopFuture<CardAction>? in
+                            if let cardAction = try? CardAction(from: link, with: cardItem.requireID()) {
+                                return cardAction.create(on: database).map({ cardAction })
+                            }
+                            else {
+                                return nil
+                            }
+                        }
+                        return cardItem
                     }
+                }
             }
             .transform(to: HTTPStatus.ok)
         }

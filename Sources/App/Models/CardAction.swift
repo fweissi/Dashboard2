@@ -62,7 +62,7 @@ final class CardAction: Model, Content {
         self.id = nil
         self.linkType = actionLink.linkType
         self.baseOrResourceURL = actionLink.baseOrResourceURL
-        self.embeddedHTML = actionLink.embeddedHTML
+        self.embeddedHTML = actionLink.embeddedHTML ?? ""
         self.safariOption = actionLink.safariOption ?? .modal
         self.size = actionLink.size
         self.version = actionLink.version

@@ -16,6 +16,7 @@ struct DashboardController: RouteCollection {
             .grouped(User.guardMiddleware())
         protected.get(use: getHandler)
         protected.post(use: createHandler)
+        protected.delete(use: deleteHandler)
     }
     
     
@@ -34,23 +35,30 @@ struct DashboardController: RouteCollection {
         let cards = dashboard.items
         
         return req.db.transaction { database -> EventLoopFuture<HTTPStatus> in
-            CardItem.query(on: database).all().flatMap({ $0.delete(force: true, on: database)}).map {
-                cards.map { (item) -> EventLoopFuture<CardItem> in
-                    guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
-                    return cardItem.create(on: database).map {
-                        let _ = item.links.compactMap { link -> EventLoopFuture<CardAction>? in
-                            if let cardAction = try? CardAction(from: link, with: cardItem.requireID()) {
-                                return cardAction.create(on: database).map({ cardAction })
+            let actionsDelete = CardAction.query(on: database).all().flatMap({ $0.delete(force: true, on: database)})
+            let itemsDelete = CardItem.query(on: database).all().flatMap({ $0.delete(force: true, on: database)})
+            return actionsDelete.and(itemsDelete)
+                .map { _, _ in
+                    cards.map { item -> EventLoopFuture<CardItem> in
+                        guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
+                        let links = item.links
+                        return cardItem.create(on: database).map {
+                            let _ = links.map { link -> EventLoopFuture<CardAction> in
+                                guard let cardAction = try? CardAction(from: link, with: cardItem.requireID()) else { fatalError() }
+                                return cardAction.create(on: req.db).map { cardAction }
                             }
-                            else {
-                                return nil
-                            }
+                            return cardItem
                         }
-                        return cardItem
                     }
                 }
-            }
-            .transform(to: HTTPStatus.ok)
+                .transform(to: HTTPStatus.ok)
         }
+    }
+    
+    
+    func deleteHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let actionsDelete = CardAction.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
+        let itemsDelete = CardItem.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
+        return actionsDelete.and(itemsDelete).transform(to: HTTPStatus.ok)
     }
 }

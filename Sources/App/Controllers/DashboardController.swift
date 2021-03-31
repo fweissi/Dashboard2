@@ -16,6 +16,7 @@ struct DashboardController: RouteCollection {
             .grouped(User.guardMiddleware())
         protected.get(use: getHandler)
         protected.post(use: createHandler)
+        protected.put(use: updateHandler)
         protected.delete(use: deleteHandler)
     }
     
@@ -39,12 +40,12 @@ struct DashboardController: RouteCollection {
             let itemsDelete = CardItem.query(on: database).all().flatMap({ $0.delete(force: true, on: database)})
             return actionsDelete.and(itemsDelete)
                 .map { _, _ in
-                    cards.map { item -> EventLoopFuture<CardItem> in
-                        guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { fatalError() }
+                    cards.compactMap { item -> EventLoopFuture<CardItem>? in
+                        guard let cardItem = try? CardItem(from: item, with: user.requireID()) else { return nil }
                         let links = item.links
                         return cardItem.create(on: database).map {
-                            let _ = links.map { link -> EventLoopFuture<CardAction> in
-                                guard let cardAction = try? CardAction(from: link, with: cardItem.requireID()) else { fatalError() }
+                            let _ = links.compactMap { link -> EventLoopFuture<CardAction>? in
+                                guard let cardAction = try? CardAction(from: link, with: cardItem.requireID()) else { return nil }
                                 return cardAction.create(on: req.db).map { cardAction }
                             }
                             return cardItem
@@ -53,6 +54,32 @@ struct DashboardController: RouteCollection {
                 }
                 .transform(to: HTTPStatus.ok)
         }
+    }
+    
+    
+    func updateHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        // decodes Hello struct using custom decoder
+        let cards: [CardItem] = try req.content.decode([CardItem].self, using: decoder)
+        let _ = cards.map({ card in
+            CardItem.find(card.id, on: req.db).map { savedCard -> EventLoopFuture<Void> in
+                if let savedCard = savedCard {
+                    savedCard.isInternetRequired = card.isInternetRequired
+                    savedCard.isPinned = card.isPinned
+                    savedCard.purchaseRequirement = card.purchaseRequirement
+                    savedCard.category = card.category
+                    savedCard.title = card.title
+                    savedCard.callToAction = card.callToAction
+                    return savedCard.save(on: req.db)
+                }
+                else {
+                    return card.create(on: req.db)
+                }
+            }
+        })
+        return req.eventLoop.future(HTTPStatus.ok)
     }
     
     

@@ -104,6 +104,8 @@ enum CardSize: String, CaseIterable {
 }
 
 class Item: ObservableObject, Codable {
+    
+    var id: UUID?
     var isInternetRequired: Bool
     var isPinned: Bool
     var purchaseRequirement: PurchaseRequirement
@@ -123,6 +125,7 @@ class Item: ObservableObject, Codable {
     }
     
     init(
+        id: UUID?,
         isInternetRequired: Bool,
         isPinned: Bool,
         purchaseRequirement: PurchaseRequirement,
@@ -239,6 +242,7 @@ struct Size: Codable, Equatable {
 
 class ActionLink: ObservableObject, Codable {
     
+    var id: UUID?
     var linkType: LinkType
     var baseOrResourceURL: String?
     var embeddedHTML: String?
@@ -247,6 +251,7 @@ class ActionLink: ObservableObject, Codable {
     var version: Int
     
     init(
+        id: UUID?,
         linkType: LinkType,
         baseOrResourceURL: String?,
         embeddedHTML: String?,

@@ -21,8 +21,10 @@ struct DashboardController: RouteCollection {
     }
     
     
-    func getHandler(req: Request) throws -> EventLoopFuture<[CardItem]> {
-        CardItem.query(on: req.db).with(\.$links).all()
+    func getHandler(req: Request) throws -> EventLoopFuture<CardItem.Dashboard> {
+        CardItem.query(on: req.db).with(\.$links).all().map({ cards in
+            return CardItem.Dashboard(items: cards)
+        })
     }
     
     
@@ -60,26 +62,68 @@ struct DashboardController: RouteCollection {
     func updateHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-
+        
         // decodes Hello struct using custom decoder
-        let cards: [CardItem] = try req.content.decode([CardItem].self, using: decoder)
-        let _ = cards.map({ card in
-            CardItem.find(card.id, on: req.db).map { savedCard -> EventLoopFuture<Void> in
+        let dashboard = try req.content.decode(Dashboard.self, using: decoder)
+        let user = try req.auth.require(User.self)
+        let cards = dashboard.items
+        
+        return cards.compactMap { item in
+            CardItem.find(item.id, on: req.db).flatMap { savedCard -> EventLoopFuture<CardItem?> in
                 if let savedCard = savedCard {
-                    savedCard.isInternetRequired = card.isInternetRequired
-                    savedCard.isPinned = card.isPinned
-                    savedCard.purchaseRequirement = card.purchaseRequirement
-                    savedCard.category = card.category
-                    savedCard.title = card.title
-                    savedCard.callToAction = card.callToAction
-                    return savedCard.save(on: req.db)
+                    savedCard.isInternetRequired = item.isInternetRequired
+                    savedCard.isPinned = item.isPinned
+                    savedCard.purchaseRequirement = item.purchaseRequirement
+                    savedCard.category = item.category
+                    savedCard.title = item.title
+                    savedCard.callToAction = item.callToAction
+                    
+                    return savedCard.update(on: req.db).map {
+                        let links = item.links
+                        let _ = links.compactMap { link in
+                            CardAction.find(link.id, on: req.db).map { savedLink -> EventLoopFuture<CardAction?> in
+                                if let savedLink = savedLink {
+                                    savedLink.linkType = link.linkType
+                                    savedLink.baseOrResourceURL = link.baseOrResourceURL
+                                    savedLink.embeddedHTML = link.embeddedHTML
+                                    savedLink.safariOption = link.safariOption ?? .modal
+                                    savedLink.size = link.size
+                                    savedLink.version = link.version
+                                    
+                                    return savedLink.update(on: req.db).map { savedLink }
+                                }
+                                else {
+                                    guard let cardAction = try? CardAction(from: link, with: savedCard.requireID())
+                                    else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
+                                    
+                                    return cardAction.create(on: req.db).map { cardAction }
+                                }
+                            }
+                        }
+                        
+                        return savedCard
+                    }
                 }
                 else {
-                    return card.create(on: req.db)
+                    guard let cardItem = try? CardItem(from: item, with: user.requireID())
+                    else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
+                    
+                    let links = item.links
+                    return cardItem.create(on: req.db).map {
+                        let _ = links.compactMap { link -> EventLoopFuture<CardAction>? in
+                            guard let cardAction = try? CardAction(from: link, with: cardItem.requireID())
+                            else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
+                            
+                            return cardAction.create(on: req.db).map { cardAction }
+                        }
+                        
+                        return cardItem
+                    }
                 }
             }
-        })
-        return req.eventLoop.future(HTTPStatus.ok)
+        }
+        .flatten(on: req.eventLoop)
+        .transform(to: HTTPStatus.ok)
     }
     
     

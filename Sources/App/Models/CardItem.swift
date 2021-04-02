@@ -61,14 +61,19 @@ final class CardItem: Model, Content {
     }
     
     
-    init(from item: Item, with userID: User.IDValue) {
-        self.id = nil
-        self.isInternetRequired = item.isInternetRequired
-        self.isPinned = item.isPinned
-        self.purchaseRequirement = item.purchaseRequirement
-        self.category = item.category
-        self.title = item.title
-        self.callToAction = item.callToAction
+    init(from cardItem: Item, with userID: User.IDValue) {
+        self.id = cardItem.id ?? UUID()
+        self.isInternetRequired = cardItem.isInternetRequired
+        self.isPinned = cardItem.isPinned
+        self.purchaseRequirement = cardItem.purchaseRequirement
+        self.category = cardItem.category
+        self.title = cardItem.title
+        self.callToAction = cardItem.callToAction
         self.$user.id = userID
+    }
+    
+    
+    struct Dashboard: Content {
+        let items: [CardItem]
     }
 }

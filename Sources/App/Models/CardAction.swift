@@ -59,10 +59,10 @@ final class CardAction: Model, Content {
     
     
     init(from actionLink: ActionLink, with cardItemID: CardItem.IDValue) {
-        self.id = nil
+        self.id = actionLink.id ?? UUID()
         self.linkType = actionLink.linkType
         self.baseOrResourceURL = actionLink.baseOrResourceURL
-        self.embeddedHTML = actionLink.embeddedHTML ?? ""
+        self.embeddedHTML = actionLink.embeddedHTML
         self.safariOption = actionLink.safariOption ?? .modal
         self.size = actionLink.size
         self.version = actionLink.version

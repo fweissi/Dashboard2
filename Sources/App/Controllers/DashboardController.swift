@@ -18,6 +18,10 @@ struct DashboardController: RouteCollection {
         protected.post(use: createHandler)
         protected.put(use: updateHandler)
         protected.delete(use: deleteHandler)
+        
+        protected.group(":cardID") { protected in
+            protected.delete(use: deleteCardHandler)
+        }
     }
     
     
@@ -131,5 +135,13 @@ struct DashboardController: RouteCollection {
         let actionsDelete = CardAction.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
         let itemsDelete = CardItem.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
         return actionsDelete.and(itemsDelete).transform(to: HTTPStatus.ok)
+    }
+    
+    
+    func deleteCardHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        return CardItem.find(req.parameters.get("cardID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap({ $0.delete(force: true, on: req.db)})
+            .transform(to: HTTPStatus.ok)
     }
 }

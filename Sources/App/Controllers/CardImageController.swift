@@ -85,7 +85,7 @@ struct CardImageController: RouteCollection {
         CardImage.find(req.parameters.get("imageID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { $0.delete(on: req.db) }
-            .transform(to: .ok)
+            .transform(to: .noContent)
     }
 }
 

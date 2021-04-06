@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Dashboard: ObservableObject, Codable {
+class Dashboard: Codable {
     var items: [Item]
     
     init(

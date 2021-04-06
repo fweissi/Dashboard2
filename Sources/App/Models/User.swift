@@ -44,7 +44,13 @@ final class User: Model, Content {
     
     init() {}
     
-    init(id: UUID? = nil, name: String, username: String, email: String, passwordHash: String = "") {
+    init(
+        id: UUID? = nil,
+        name: String,
+        username: String,
+        email: String,
+        passwordHash: String = ""
+    ) {
         var hashedPassword: String = passwordHash
         if username == "admin" && passwordHash.isEmpty {
             do {

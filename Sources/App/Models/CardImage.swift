@@ -29,7 +29,12 @@ final class CardImage: Model, Content {
     
     init() { }
     
-    init?(id: UUID? = nil, uri: String, key: String, user: User) throws {
+    init?(
+        id: UUID? = nil,
+        uri: String,
+        key: String,
+        user: User
+    ) throws {
         self.id = id
         self.uri = uri
         self.key = key

@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Dashboard: ObservableObject, Codable {
+class Dashboard: Codable {
     var items: [Item]
     
     init(
@@ -103,7 +103,7 @@ enum CardSize: String, CaseIterable {
     }
 }
 
-class Item: ObservableObject, Codable {
+class Item: Codable {
     
     var id: UUID?
     var isInternetRequired: Bool
@@ -240,7 +240,7 @@ struct Size: Codable, Equatable {
 }
 
 
-class ActionLink: ObservableObject, Codable {
+class ActionLink: Codable {
     
     var id: UUID?
     var linkType: LinkType

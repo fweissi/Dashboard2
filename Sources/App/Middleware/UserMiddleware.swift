@@ -20,21 +20,23 @@ struct UserMiddleware: ModelMiddleware {
     }
     
     
-    func softDelete(model: User, on db: Database, next: AnyModelResponder) -> EventLoopFuture<Void> {
+    func softDelete(model: User, on db: Database, next: AnyModelResponder) -> EventLoopFuture<HTTPStatus> {
         guard model.username != "admin" else {
             print("DENIED /admin user not soft deleted.")
-            return db.eventLoop.future()
+            return db.eventLoop.future(error: Abort(.forbidden))
         }
         
         return next.softDelete(model, on: db)
+            .transform(to: .noContent)
     }
     
-    func delete(model: User, force: Bool, on db: Database, next: AnyModelResponder) -> EventLoopFuture<Void> {
+    func delete(model: User, force: Bool, on db: Database, next: AnyModelResponder) -> EventLoopFuture<HTTPStatus> {
         guard model.username != "admin" else {
             print("DENIED /admin user not deleted.")
-            return db.eventLoop.future()
+            return db.eventLoop.future(error: Abort(.forbidden))
         }
         
         return next.delete(model, force: force, on: db)
+            .transform(to: .noContent)
     }
 }

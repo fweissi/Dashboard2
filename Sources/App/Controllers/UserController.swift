@@ -152,7 +152,7 @@ struct UserController: RouteCollection {
                 }
                 
                 return user.delete(on: req.db)
-                    .transform(to: .resetContent)
+                    .transform(to: .noContent)
             }
     }
     
@@ -173,7 +173,7 @@ struct UserController: RouteCollection {
                 guard user.username != "admin" else { return req.eventLoop.future(.unauthorized) }
                 
                 return user.delete(force: true, on: req.db)
-                    .transform(to: .resetContent)
+                    .transform(to: .noContent)
             }
     }
 }

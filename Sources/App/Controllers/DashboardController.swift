@@ -127,14 +127,14 @@ struct DashboardController: RouteCollection {
             }
         }
         .flatten(on: req.eventLoop)
-        .transform(to: HTTPStatus.ok)
+        .transform(to: HTTPStatus.noContent)
     }
     
     
     func deleteHandler(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let actionsDelete = CardAction.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
         let itemsDelete = CardItem.query(on: req.db).all().flatMap({ $0.delete(force: true, on: req.db)})
-        return actionsDelete.and(itemsDelete).transform(to: HTTPStatus.ok)
+        return actionsDelete.and(itemsDelete).transform(to: HTTPStatus.noContent)
     }
     
     
@@ -142,6 +142,6 @@ struct DashboardController: RouteCollection {
         return CardItem.find(req.parameters.get("cardID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap({ $0.delete(force: true, on: req.db)})
-            .transform(to: HTTPStatus.ok)
+            .transform(to: HTTPStatus.noContent)
     }
 }

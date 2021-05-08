@@ -12,6 +12,7 @@ struct CreateTeam: Migration {
         database.schema(Team.schema)
             .id()
             .field("name", .string, .required)
+            .unique(on: "name", name: "no_duplicate_names")
             .create()
     }
     

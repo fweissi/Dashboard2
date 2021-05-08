@@ -35,6 +35,9 @@ final class CardItem: Model, Content {
     @Parent(key: "user_id")
     var user: User
     
+    @OptionalParent(key: "team_id")
+    var team: Team?
+    
     @Children(for: \.$cardItem)
     var links: [CardAction]
     

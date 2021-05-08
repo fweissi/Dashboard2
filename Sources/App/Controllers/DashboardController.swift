@@ -78,9 +78,11 @@ struct DashboardController: RouteCollection {
                     return savedCard.delete(on: req.db).flatMap { _ -> EventLoopFuture<CardItem?> in
                         guard let cardItem = try? CardItem(from: item, with: user.requireID())
                         else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
-                        
-                        let links = item.links
+            
+                        let teamID = item.team?.id
+                        cardItem.$team.id = teamID
                         return cardItem.create(on: req.db).map {
+                            let links = item.links
                             let _ = links.compactMap { link -> EventLoopFuture<CardAction>? in
                                 guard let cardAction = try? CardAction(from: link, with: cardItem.requireID())
                                 else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
@@ -96,8 +98,10 @@ struct DashboardController: RouteCollection {
                     guard let cardItem = try? CardItem(from: item, with: user.requireID())
                     else { return req.db.eventLoop.future(error: Abort(.badRequest)) }
                     
-                    let links = item.links
+                    let teamID = item.team?.id
+                    cardItem.$team.id = teamID
                     return cardItem.create(on: req.db).map {
+                        let links = item.links
                         let _ = links.compactMap { link -> EventLoopFuture<CardAction>? in
                             guard let cardAction = try? CardAction(from: link, with: cardItem.requireID())
                             else { return req.db.eventLoop.future(error: Abort(.badRequest)) }

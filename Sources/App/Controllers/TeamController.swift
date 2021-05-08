@@ -14,13 +14,16 @@ struct TeamController: RouteCollection {
         
         teams.get(use: getAllHandler)
         teams.get("users", use: getAllWithUsersHandler)
+        teams.get("cards", use: getAllWithCardItemsHandler)
         teams.post(use: createHandler)
         
         teams.group(":teamID") { team in
             team.get("users", use: getUsersHandler)
             team.get(use: getHandler)
             team.post("user", ":userID", use: addUsersHandler)
+            team.post("card", ":cardID", use: addCardItemsHandler)
             team.delete("user", ":userID", use: deleteUsersHandler)
+            team.delete("card", ":cardID", use: deleteCardItemsHandler)
         }
     }
     
@@ -40,6 +43,19 @@ struct TeamController: RouteCollection {
     }
     
     
+    func addCardItemsHandler(_ req: Request) throws -> EventLoopFuture<CardItem> {
+        let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        let cardItemQuery = CardItem.find(req.parameters.get("cardID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        return teamQuery.and(cardItemQuery)
+            .flatMap { team, cardItem in
+                cardItem.$team.id = team.id
+                return cardItem.save(on: req.db).map { cardItem }
+            }
+    }
+    
+    
     func getAllHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
         Team.query(on: req.db).all()
     }
@@ -47,6 +63,15 @@ struct TeamController: RouteCollection {
     
     func getAllWithUsersHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
         Team.query(on: req.db).with(\.$users).all()
+    }
+    
+    
+    func getAllWithCardItemsHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
+//        Team.query(on: req.db).with(\.$cardItems).all()
+        
+        Team.query(on: req.db).with(\.$cardItems) { cardItem in
+            cardItem.with(\.$links)
+        }.all()
     }
     
     
@@ -84,6 +109,19 @@ struct TeamController: RouteCollection {
                     .$users
                     .detach(user, on: req.db)
                     .transform(to: .noContent)
+            }
+    }
+    
+    
+    func deleteCardItemsHandler(_ req: Request) throws -> EventLoopFuture<CardItem> {
+        let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        let cardItemQuery = CardItem.find(req.parameters.get("cardID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        return teamQuery.and(cardItemQuery)
+            .flatMap { team, cardItem in
+                cardItem.$team.id = nil
+                return cardItem.save(on: req.db).map { cardItem }
             }
     }
 }

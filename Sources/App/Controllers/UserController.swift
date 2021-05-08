@@ -12,6 +12,7 @@ import Vapor
 struct UserController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let users = routes.grouped("api", "users")
+        users.get(use: getAllHandler)
         users.post(use: createHandler)
         
         let passwordProtected = users.grouped(User.authenticator())
@@ -19,7 +20,6 @@ struct UserController: RouteCollection {
         
         let tokenProtected = users.grouped(UserToken.authenticator())
             .grouped(User.guardMiddleware())
-        tokenProtected.get(use: getAllHandler)
         tokenProtected.get("logout", use: logoutHandler)
         tokenProtected.get("me", "full") { req -> User in
             try req.auth.require(User.self)

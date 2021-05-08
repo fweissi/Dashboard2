@@ -17,6 +17,9 @@ final class Team: Model, Content {
     @Field(key: "name")
     var name: String
     
+    @Children(for: \.$team)
+    var cardItems: [CardItem]
+    
     @Siblings(
         through: TeamUserPivot.self,
         from: \.$team,

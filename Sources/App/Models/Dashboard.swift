@@ -161,7 +161,7 @@ class Item: Codable {
         self.category = try values.decode(Category.self, forKey: .category)
         
         self.title = try values.decode(String.self, forKey: .title)
-        self.callToAction = try values.decodeIfPresent(String.self, forKey: .callToAction) ?? ""
+        self.callToAction = try values.decode(String.self, forKey: .callToAction)
     
         self.team = try values.decodeIfPresent(TeamInput.self, forKey: .team)
         
@@ -181,9 +181,9 @@ class Item: Codable {
         try container.encode(purchaseRequirement, forKey: .purchaseRequirement)
         try container.encode(category, forKey: .category)
         try container.encode(title, forKey: .title)
+        try container.encode(callToAction, forKey: .callToAction)
         try container.encode(links, forKey: .links)
         try container.encode(team, forKey: .team)
-        
     }
     
     

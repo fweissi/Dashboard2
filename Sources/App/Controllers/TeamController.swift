@@ -11,17 +11,23 @@ import Vapor
 struct TeamController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let teams = routes.grouped("api", "teams")
-        
         teams.get(use: getAllHandler)
-        teams.get("users", use: getAllWithUsersHandler)
         teams.get("cards", use: getAllWithCardItemsHandler)
-        teams.post(use: createHandler)
         
-        teams.group(":teamID") { team in
+        let protected = teams
+            .grouped(UserToken.authenticator())
+            .grouped(User.guardMiddleware())
+        
+        
+        protected.get("users","private", use: getAllWithUsersHandler)
+        protected.post(use: createHandler)
+        
+        protected.group(":teamID") { team in
             team.get("users", use: getUsersHandler)
             team.get(use: getHandler)
             team.post("user", ":userID", use: addUsersHandler)
             team.post("card", ":cardID", use: addCardItemsHandler)
+            team.post("save", use: postCardItemsHandler)
             team.delete("user", ":userID", use: deleteUsersHandler)
             team.delete("card", ":cardID", use: deleteCardItemsHandler)
         }
@@ -67,8 +73,6 @@ struct TeamController: RouteCollection {
     
     
     func getAllWithCardItemsHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
-//        Team.query(on: req.db).with(\.$cardItems).all()
-        
         Team.query(on: req.db).with(\.$cardItems) { cardItem in
             cardItem.with(\.$links)
         }.all()
@@ -95,6 +99,40 @@ struct TeamController: RouteCollection {
     func createHandler(_ req: Request) throws -> EventLoopFuture<Team> {
         let team = try req.content.decode(Team.self)
         return team.save(on: req.db).map { team }
+    }
+    
+    
+    func postCardItemsHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let jsonObject = try req.content.decode(CardInput.self, using: JSONDecoder())
+        guard let uuidString = req.parameters.get("teamID"),
+              let teamID = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
+        
+        return CardItem.query(on: req.db)
+            .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+            .filter(Team.self, \.$id == teamID)
+            .all()
+            .flatMapEach(on: req.eventLoop) { card -> EventLoopFuture<CardItem> in
+                card.$team.id = nil
+                return card.save(on: req.db).map { card }
+            }
+            .flatMapThrowing { _ in
+                return jsonObject.cardIDs.compactMap({ cardUUID -> EventLoopFuture<CardItem?> in
+                    guard let cardID = UUID(uuidString: cardUUID) else { return req.eventLoop.future(nil) }
+                    
+                    return CardItem.find(cardID, on: req.db)
+                        .flatMap { card in
+                            guard let card = card else { return req.eventLoop.future(nil) }
+                            
+                            card.$team.id = teamID
+                            return card.save(on: req.db).map { card }
+                        }
+                })
+            }
+            .transform(to: .noContent)
+    }
+    
+    struct CardInput: Codable {
+        let cardIDs: [String]
     }
     
     

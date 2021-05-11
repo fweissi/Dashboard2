@@ -34,3 +34,17 @@ final class Team: Model, Content {
     }
 }
 
+
+//  Displaying Users but hiding sensative information
+extension Team {
+    struct Public: Content {
+        let id: UUID?
+        let name: String
+        let hasCards: Bool
+    }
+    
+    func toPublic(on database: Database) -> Team.Public {
+        Public(id: id, name: name, hasCards: cardItems.count > 0)
+    }
+}
+

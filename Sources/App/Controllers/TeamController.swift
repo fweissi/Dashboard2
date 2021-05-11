@@ -12,7 +12,7 @@ struct TeamController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let teams = routes.grouped("api", "teams")
         teams.get(use: getAllHandler)
-        teams.get("cards", use: getAllWithCardItemsHandler)
+        teams.get("preview", use: getPreviewHandler)
         
         let protected = teams
             .grouped(UserToken.authenticator())
@@ -24,6 +24,7 @@ struct TeamController: RouteCollection {
         
         protected.group(":teamID") { team in
             team.get("users", use: getUsersHandler)
+            team.get("cards", use: getAllWithCardItemsHandler)
             team.get(use: getHandler)
             team.post("user", ":userID", use: addUsersHandler)
             team.post("card", ":cardID", use: addCardItemsHandler)
@@ -72,16 +73,42 @@ struct TeamController: RouteCollection {
     }
     
     
-    func getAllWithCardItemsHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
-        Team.query(on: req.db).with(\.$cardItems) { cardItem in
-            cardItem.with(\.$links)
-        }.all()
+    func getAllWithCardItemsHandler(_ req: Request) throws -> EventLoopFuture<[CardItem]> {
+        Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { team in
+                guard let teamID = try? team.requireID() else { return req.eventLoop.future([]) }
+                return CardItem.query(on: req.db)
+                    .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+                    .filter(Team.self, \.$id == teamID)
+                    .with(\.$links)
+                    .all()
+            }
     }
     
     
     func getHandler(_ req: Request) throws -> EventLoopFuture<Team> {
         Team.find(req.parameters.get("teamID"), on: req.db)
             .unwrap(or: Abort(.notFound))
+    }
+    
+    
+    func getPreviewHandler(req: Request) throws -> EventLoopFuture<Int> {
+        Team.query(on: req.db)
+            .first()
+            .unwrap(or: Abort(.noContent))
+            .flatMap { team in
+                guard let teamID = try? team.requireID()
+                else { return req.eventLoop.future(0) }
+                
+                return CardItem.query(on: req.db)
+                    .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+                    .filter(Team.self, \.$id == teamID)
+                    .all()
+                    .flatMap { cards in
+                        return req.eventLoop.future(cards.count)
+                    }
+            }
     }
     
     

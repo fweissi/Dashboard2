@@ -104,18 +104,9 @@ struct UserController: RouteCollection {
     
     func loginHandler(_ req: Request) throws -> EventLoopFuture<UserToken> {
         let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
         let token = try user.generateToken()
-        return UserToken.query(on: req.db)
-            .filter(\.$user.$id == userID)
-            .all()
-            .flatMap { tokens in
-                return tokens.delete(force: true, on: req.db)
-                    .flatMap {
-                        token.save(on: req.db)
-                            .map { token }
-                    }
-            }
+        return token.save(on: req.db)
+            .map { token }
     }
     
     

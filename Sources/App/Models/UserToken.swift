@@ -20,6 +20,9 @@ final class UserToken: Model, Content {
 
     @Parent(key: "user_id")
     var user: User
+    
+    @Timestamp(key: "created_at", on: .create)
+    var createdAt: Date?
 
     init() { }
 

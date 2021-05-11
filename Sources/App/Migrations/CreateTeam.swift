@@ -12,6 +12,8 @@ struct CreateTeam: Migration {
         database.schema(Team.schema)
             .id()
             .field("name", .string, .required)
+            .field("corp_id", .int, .required)
+            .unique(on: "corp_id", name: "no_duplicate_corp_ids")
             .unique(on: "name", name: "no_duplicate_names")
             .create()
     }
@@ -25,7 +27,7 @@ struct CreateTeam: Migration {
 struct TeamMigrationSeed: Migration {
     func prepare(on db: Database) -> EventLoopFuture<Void> {
         [
-            Team(name: "Brandwise")
+            Team(name: "Brandwise", corpID: 1)
         ].create(on: db)
     }
 

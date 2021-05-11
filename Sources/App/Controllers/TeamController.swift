@@ -99,7 +99,7 @@ struct TeamController: RouteCollection {
             .unwrap(or: Abort(.noContent))
             .flatMap { team in
                 guard let teamID = try? team.requireID()
-                else { return req.eventLoop.future(0) }
+                else { return req.eventLoop.future(-1) }
                 
                 return CardItem.query(on: req.db)
                     .join(Team.self, on: \CardItem.$team.$id == \Team.$id)

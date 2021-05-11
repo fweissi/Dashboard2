@@ -17,6 +17,9 @@ final class Team: Model, Content {
     @Field(key: "name")
     var name: String
     
+    @Field(key: "corp_id")
+    var corpID: Int
+    
     @Children(for: \.$team)
     var cardItems: [CardItem]
     
@@ -28,9 +31,10 @@ final class Team: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String) {
+    init(id: UUID? = nil, name: String, corpID: Int) {
         self.id = id
         self.name = name
+        self.corpID = corpID
     }
 }
 

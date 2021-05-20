@@ -18,6 +18,7 @@ struct DashboardController: RouteCollection {
         protected.post(use: createHandler)
         protected.put(use: updateHandler)
         protected.delete(use: deleteHandler)
+        protected.post("upload", use: uploadHandler)
         
         protected.group(":cardID") { protected in
             protected.delete(use: deleteCardHandler)
@@ -116,6 +117,17 @@ struct DashboardController: RouteCollection {
         }
         .flatten(on: req.eventLoop)
         .transform(to: HTTPStatus.noContent)
+    }
+    
+    
+    func uploadHandler(_ req: Request) throws -> EventLoopFuture<String> {
+        let key = try req.query.get(String.self, at: "key")
+        
+        return req.body.collect()
+            .unwrap(or: Abort(.noContent))
+            .flatMap { data in
+                req.fs.upload(key: key, data: Data(buffer: data)).map { $0 }
+            }
     }
     
     

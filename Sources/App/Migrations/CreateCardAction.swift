@@ -18,7 +18,7 @@ struct CreateCardAction: Migration {
             .field("safari", .string, .required)
             .field("size", .dictionary(of: .int), .required)
             .field("version", .int, .required)
-            .field("card_item_id", .uuid, .references(CardItem.schema, "id", onDelete: .cascade))
+            .field("card_item_id", .uuid, .required, .references(CardItem.schema, "id", onDelete: .cascade))
             .create()
     }
     

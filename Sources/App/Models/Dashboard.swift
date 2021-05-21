@@ -104,6 +104,9 @@ enum CardSize: String, CaseIterable {
 }
 
 class Item: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id, isInternetRequired, isPinned, purchaseRequirement, category, title, callToAction, links, team
+    }
     
     var id: UUID?
     var isInternetRequired: Bool
@@ -113,6 +116,8 @@ class Item: Codable {
     var title: String
     var callToAction: String
     var links: [ActionLink]
+    
+    var team: TeamInput?
     
     var isInAppPurchase: Bool {
         category == .inAppPurchase
@@ -141,6 +146,44 @@ class Item: Codable {
         self.title = title
         self.callToAction = callToAction
         self.links = links
+    }
+    
+    
+    required init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        
+        self.isInternetRequired = try values.decode(Bool.self, forKey: .isInternetRequired)
+        self.isPinned = try values.decode(Bool.self, forKey: .isPinned)
+        
+        self.purchaseRequirement = try values.decode(PurchaseRequirement.self, forKey: .purchaseRequirement)
+        self.category = try values.decode(Category.self, forKey: .category)
+        
+        self.title = try values.decode(String.self, forKey: .title)
+        self.callToAction = try values.decode(String.self, forKey: .callToAction)
+    
+        self.team = try values.decodeIfPresent(TeamInput.self, forKey: .team)
+        
+        self.links = try values.decodeIfPresent([ActionLink].self, forKey: .links) ?? []
+    }
+    
+    struct TeamInput: Codable {
+        let id: UUID?
+    }
+    
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(isInternetRequired, forKey: .isInternetRequired)
+        try container.encode(isPinned, forKey: .isPinned)
+        try container.encode(purchaseRequirement, forKey: .purchaseRequirement)
+        try container.encode(category, forKey: .category)
+        try container.encode(title, forKey: .title)
+        try container.encode(callToAction, forKey: .callToAction)
+        try container.encode(links, forKey: .links)
+        try container.encode(team, forKey: .team)
     }
     
     

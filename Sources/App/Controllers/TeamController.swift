@@ -11,16 +11,26 @@ import Vapor
 struct TeamController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let teams = routes.grouped("api", "teams")
-        
         teams.get(use: getAllHandler)
-        teams.get("users", use: getAllWithUsersHandler)
-        teams.post(use: createHandler)
+        teams.get("preview", use: getPreviewHandler)
         
-        teams.group(":teamID") { team in
+        let protected = teams
+            .grouped(UserToken.authenticator())
+            .grouped(User.guardMiddleware())
+        
+        
+        protected.get("users","private", use: getAllWithUsersHandler)
+        protected.post(use: createHandler)
+        
+        protected.group(":teamID") { team in
             team.get("users", use: getUsersHandler)
+            team.get("cards", use: getAllWithCardItemsHandler)
             team.get(use: getHandler)
             team.post("user", ":userID", use: addUsersHandler)
+            team.post("card", ":cardID", use: addCardItemsHandler)
+            team.post("save", use: postCardItemsHandler)
             team.delete("user", ":userID", use: deleteUsersHandler)
+            team.delete("card", ":cardID", use: deleteCardItemsHandler)
         }
     }
     
@@ -40,6 +50,19 @@ struct TeamController: RouteCollection {
     }
     
     
+    func addCardItemsHandler(_ req: Request) throws -> EventLoopFuture<CardItem> {
+        let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        let cardItemQuery = CardItem.find(req.parameters.get("cardID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        return teamQuery.and(cardItemQuery)
+            .flatMap { team, cardItem in
+                cardItem.$team.id = team.id
+                return cardItem.save(on: req.db).map { cardItem }
+            }
+    }
+    
+    
     func getAllHandler(_ req: Request) throws -> EventLoopFuture<[Team]> {
         Team.query(on: req.db).all()
     }
@@ -50,9 +73,42 @@ struct TeamController: RouteCollection {
     }
     
     
+    func getAllWithCardItemsHandler(_ req: Request) throws -> EventLoopFuture<[CardItem]> {
+        Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { team in
+                guard let teamID = try? team.requireID() else { return req.eventLoop.future([]) }
+                return CardItem.query(on: req.db)
+                    .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+                    .filter(Team.self, \.$id == teamID)
+                    .with(\.$links)
+                    .all()
+            }
+    }
+    
+    
     func getHandler(_ req: Request) throws -> EventLoopFuture<Team> {
         Team.find(req.parameters.get("teamID"), on: req.db)
             .unwrap(or: Abort(.notFound))
+    }
+    
+    
+    func getPreviewHandler(req: Request) throws -> EventLoopFuture<Int> {
+        Team.query(on: req.db)
+            .first()
+            .unwrap(or: Abort(.noContent))
+            .flatMap { team in
+                guard let teamID = try? team.requireID()
+                else { return req.eventLoop.future(-1) }
+                
+                return CardItem.query(on: req.db)
+                    .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+                    .filter(Team.self, \.$id == teamID)
+                    .all()
+                    .flatMap { cards in
+                        return req.eventLoop.future(cards.count)
+                    }
+            }
     }
     
     
@@ -73,6 +129,40 @@ struct TeamController: RouteCollection {
     }
     
     
+    func postCardItemsHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let jsonObject = try req.content.decode(CardInput.self, using: JSONDecoder())
+        guard let uuidString = req.parameters.get("teamID"),
+              let teamID = UUID(uuidString: uuidString) else { throw Abort(.badRequest) }
+        
+        return CardItem.query(on: req.db)
+            .join(Team.self, on: \CardItem.$team.$id == \Team.$id)
+            .filter(Team.self, \.$id == teamID)
+            .all()
+            .flatMapEach(on: req.eventLoop) { card -> EventLoopFuture<CardItem> in
+                card.$team.id = nil
+                return card.save(on: req.db).map { card }
+            }
+            .flatMapThrowing { _ in
+                return jsonObject.cardIDs.compactMap({ cardUUID -> EventLoopFuture<CardItem?> in
+                    guard let cardID = UUID(uuidString: cardUUID) else { return req.eventLoop.future(nil) }
+                    
+                    return CardItem.find(cardID, on: req.db)
+                        .flatMap { card in
+                            guard let card = card else { return req.eventLoop.future(nil) }
+                            
+                            card.$team.id = teamID
+                            return card.save(on: req.db).map { card }
+                        }
+                })
+            }
+            .transform(to: .noContent)
+    }
+    
+    struct CardInput: Codable {
+        let cardIDs: [String]
+    }
+    
+    
     func deleteUsersHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
             .unwrap(or: Abort(.notFound))
@@ -84,6 +174,19 @@ struct TeamController: RouteCollection {
                     .$users
                     .detach(user, on: req.db)
                     .transform(to: .noContent)
+            }
+    }
+    
+    
+    func deleteCardItemsHandler(_ req: Request) throws -> EventLoopFuture<CardItem> {
+        let teamQuery = Team.find(req.parameters.get("teamID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        let cardItemQuery = CardItem.find(req.parameters.get("cardID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        return teamQuery.and(cardItemQuery)
+            .flatMap { team, cardItem in
+                cardItem.$team.id = nil
+                return cardItem.save(on: req.db).map { cardItem }
             }
     }
 }

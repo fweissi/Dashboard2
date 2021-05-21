@@ -17,6 +17,12 @@ final class Team: Model, Content {
     @Field(key: "name")
     var name: String
     
+    @Field(key: "corp_id")
+    var corpID: Int
+    
+    @Children(for: \.$team)
+    var cardItems: [CardItem]
+    
     @Siblings(
         through: TeamUserPivot.self,
         from: \.$team,
@@ -25,9 +31,24 @@ final class Team: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String) {
+    init(id: UUID? = nil, name: String, corpID: Int) {
         self.id = id
         self.name = name
+        self.corpID = corpID
+    }
+}
+
+
+//  Displaying Users but hiding sensative information
+extension Team {
+    struct Public: Content {
+        let id: UUID?
+        let name: String
+        let hasCards: Bool
+    }
+    
+    func toPublic(on database: Database) -> Team.Public {
+        Public(id: id, name: name, hasCards: cardItems.count > 0)
     }
 }
 

@@ -18,7 +18,8 @@ struct CreateCardItem: Migration {
             .field("category", .string, .required)
             .field("title", .string, .required)
             .field("callToAction", .string, .required)
-            .field("user_id", .uuid, .references(User.schema, "id", onDelete: .cascade))
+            .field("user_id", .uuid, .required, .references(User.schema, "id", onDelete: .cascade))
+            .field("team_id", .uuid, .references(Team.schema, "id", onDelete: .cascade))
             .create()
     }
     
